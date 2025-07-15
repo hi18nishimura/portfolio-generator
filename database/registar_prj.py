@@ -57,3 +57,5 @@ def process(prj_name,zip_file,pros_path = "./prj"):
     conn.commit()
     conn.close()
 
+    return project_id
+
