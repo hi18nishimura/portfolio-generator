@@ -12,7 +12,48 @@
 #AIに渡す処理は、別の関数で実装する予定です。
 
 import streamlit as st
+import zipfile
+import os
+import sqlite3
 
-def process(prj_name,zip_file):
-    prj_id = 1  # 仮のID割り当て
-    return prj_id
+def process(prj_name,zip_file,pros_path = "./prj"):
+    filepathlist = []
+
+    with zipfile.ZipFile(zip_file, 'r') as zip_ref: #データベースにいれるプロジェクト名と構成ファイルのリストを取得
+        zip_ref.extractall(pros_path)
+
+        for info in zip_ref.infolist():
+            if not info.is_dir():
+                filepathlist.append(os.path.normpath(os.path.join(pros_path, info.filename)))
+
+    conn = sqlite3.connect('prj.db')
+    cursor = conn.cursor()
+    #id(プロジェクトid),プロジェクト名，タイムスタンプのデータベース
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS prj (
+    project_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_name TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+     )
+    ''')
+    #id,プロジェクトid,構成ファイルのデータベース
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS prj_files (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER,
+    file_path TEXT NOT NULL,
+    FOREIGN KEY(project_id) REFERENCES prj(project_id)
+     )
+    ''')
+
+    # プロジェクトを登録
+    cursor.execute("INSERT INTO prj (project_name) VALUES (?)", (prj_name,))
+    project_id = cursor.lastrowid  # 自動採番されたIDを取得
+
+    # 構成ファイルを登録
+    for filepath in filepathlist:
+        cursor.execute("INSERT INTO prj_files (project_id, file_path) VALUES (?, ?)", (project_id, filepath))
+
+    conn.commit()
+    conn.close()
+
