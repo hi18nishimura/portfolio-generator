@@ -3,9 +3,9 @@
 # プログラムのファイルになりそうな拡張子をprog_extsに定義します。
 # この拡張子を持つファイルだけfile_listに追加します。
 
+import os
 
-def process(file_list):
-    file_list = []
+def process(all_files):
     prog_exts = [
     # コンパイル系
     ".c", ".h", ".cpp", ".cc", ".cxx", ".hpp", ".hh", ".hxx",
@@ -56,5 +56,5 @@ def process(file_list):
     ".sql", ".pls", ".pks", ".pkb",
     ".ini",
     ]
-
-    return file_list
+    prog_files = [f for f in all_files if os.path.splitext(f)[1].lower() in prog_exts]
+    return prog_files
