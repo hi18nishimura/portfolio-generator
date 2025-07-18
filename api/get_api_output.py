@@ -13,6 +13,7 @@ import sqlite3
 import json
 import requests
 import re
+#from get_program_file import filter_program_files  # 拡張子でフィルタリング
 
 API_KEY = "AIzaSyBMWSF9tAMtzl7M13SjNx4kGoFFBfKnEuY"
 API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
@@ -27,7 +28,7 @@ def generate_ai_output(prompt: str) -> str:
     else:
         raise Exception(f"APIエラー: {response.status_code}\n{response.text}")
 
-# データベースからファイルパスを取得
+# DBからファイルパスを取得
 def get_file_list_from_db(prj_id):
     conn = sqlite3.connect("prj.db")
     cursor = conn.cursor()
@@ -38,21 +39,21 @@ def get_file_list_from_db(prj_id):
 
 # ファイル中身をAIに送って概要と工夫点を取得
 def process(file_list, add_prompt=None):
+    #file_list = filter_program_files(file_list)  # ← ここで拡張子でフィルタリング
+
     file_summary = ""
     for fname in file_list:
         try:
             with open(fname, "r", encoding="utf-8") as f:
                 content = f.read()
-            if len(content) > 1500:
-                content = content[:1500] + "\n...（省略）"
             file_summary += f"\n--- {fname} ---\n{content}\n"
         except Exception as e:
             file_summary += f"\n--- {fname} ---\n(読み込みに失敗しました: {e})\n"
 
     base_prompt = (
-        "以下はあるPythonプロジェクトに含まれる複数のソースコードファイルの中身です。\n"
+        "以下はあるプログラムプロジェクトに含まれる複数のソースコードファイルの中身です。\n"
         "出力はすべて日本語でお願いします。\n"
-        "これらのコードをもとに、このプロジェクトの概要（description）と、\n"
+        "これらのコードに書かれている内容をもとに、このプロジェクトの概要（description）と、\n"
         "コード上で工夫されている点（improvements）を簡潔に抽出してください。\n"
         "※ このプロンプト自身の説明ではなく、ファイル内容だけに基づいて出力してください。\n\n"
         f"【ファイル一覧と中身】\n{file_summary}\n\n"
@@ -95,7 +96,7 @@ def process(file_list, add_prompt=None):
 
 # メイン実行部
 if __name__ == "__main__":
-    prj_id = 1  # ← 対象プロジェクトIDを指定（必要に応じて変更）
+    prj_id = 1  # 対象プロジェクトID
     file_list = get_file_list_from_db(prj_id)
     result = process(file_list)
     print("\n=== Markdown Output ===\n")
