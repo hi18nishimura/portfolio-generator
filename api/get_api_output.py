@@ -17,7 +17,7 @@ import re
 API_KEY = "AIzaSyBMWSF9tAMtzl7M13SjNx4kGoFFBfKnEuY"
 API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
 
-# ✅ Gemini API呼び出し
+# Gemini API呼び出し
 def generate_ai_output(prompt: str) -> str:
     headers = {"Content-Type": "application/json"}
     data = {"contents": [{"parts": [{"text": prompt}]}]}
@@ -27,7 +27,7 @@ def generate_ai_output(prompt: str) -> str:
     else:
         raise Exception(f"APIエラー: {response.status_code}\n{response.text}")
 
-# ✅ データベースからファイルパスを取得
+# データベースからファイルパスを取得
 def get_file_list_from_db(prj_id):
     conn = sqlite3.connect("prj.db")
     cursor = conn.cursor()
@@ -36,7 +36,7 @@ def get_file_list_from_db(prj_id):
     conn.close()
     return file_list
 
-# ✅ ファイル中身をAIに送って概要と工夫点を取得
+# ファイル中身をAIに送って概要と工夫点を取得
 def process(file_list, add_prompt=None):
     file_summary = ""
     for fname in file_list:
@@ -92,3 +92,11 @@ def process(file_list, add_prompt=None):
         "improvements": improvements,
         "markdown": markdown
     }
+
+# メイン実行部
+if __name__ == "__main__":
+    prj_id = 1  # ← 対象プロジェクトIDを指定（必要に応じて変更）
+    file_list = get_file_list_from_db(prj_id)
+    result = process(file_list)
+    print("\n=== Markdown Output ===\n")
+    print(result["markdown"])
