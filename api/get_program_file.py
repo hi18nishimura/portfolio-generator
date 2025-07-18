@@ -5,7 +5,6 @@
 
 
 def process(file_list):
-    file_list = []
     prog_exts = [
     # コンパイル系
     ".c", ".h", ".cpp", ".cc", ".cxx", ".hpp", ".hh", ".hxx",
@@ -57,4 +56,4 @@ def process(file_list):
     ".ini",
     ]
 
-    return file_list
+    return [f for f in file_list if any(f.endswith(ext) for ext in prog_exts)]
