@@ -18,13 +18,14 @@ import sqlite3
 
 def process(prj_name,zip_file,pros_path = "./prj"):
     filepathlist = []
-
+    pros_path = os.path.normpath(pros_path)
     with zipfile.ZipFile(zip_file, 'r') as zip_ref: #データベースにいれるプロジェクト名と構成ファイルのリストを取得
-        zip_ref.extractall(pros_path)
-
         for info in zip_ref.infolist():
+            if  ".git" in info.filename or "__MACOSX" in info.filename:
+                continue
             if not info.is_dir():
                 filepathlist.append(os.path.normpath(os.path.join(pros_path, info.filename)))
+                zip_ref.extract(info, pros_path)
 
     conn = sqlite3.connect('prj.db')
     cursor = conn.cursor()
