@@ -3,10 +3,12 @@ services.py: データ操作やAPI呼び出しのスタブクラス
 具体的な実装は後で追加します。
 """
 
+from database.get_prj_list import process as get_prj_list
+
 class ProjectService:
     """プロジェクト一覧取得／作成"""
     def list_projects(self):
-        pass
+        return get_prj_list()
 
 from database.registar_prj import process as registar_prj
 from database.registar_api import process as registar_api
