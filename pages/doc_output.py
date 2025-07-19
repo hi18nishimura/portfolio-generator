@@ -3,8 +3,15 @@ pages/doc_output.py: ドキュメント出力画面モジュール
 """
 import streamlit as st
 from services import DocumentService
+import re
 
 doc_svc = DocumentService()
+
+def strip_fences(md: str) -> str:
+    # DOTALL: 「.」が改行にもマッチ
+    pattern = re.compile(r"^```[^\n]*\n(.*)\n```$", re.DOTALL)
+    m = pattern.match(md)
+    return m.group(1) if m else md
 
 def render():
     st.header("ドキュメント出力画面")
@@ -26,6 +33,7 @@ def render():
                 st.warning("テキストを入力してください。")
     with right:
         st.subheader("AI 生成結果プレビュー")
+        st.session_state.generated_md = strip_fences(st.session_state.generated_md)
         st.markdown(st.session_state.generated_md)
     if st.button('次へ'):
         st.session_state.page = 'doc_edit'
