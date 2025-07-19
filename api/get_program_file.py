@@ -5,7 +5,7 @@
 
 
 def process(file_list):
-    file_list = []
+    file_list_t = []
     prog_exts = [
     # コンパイル系
     ".c", ".h", ".cpp", ".cc", ".cxx", ".hpp", ".hh", ".hxx",
@@ -56,5 +56,12 @@ def process(file_list):
     ".sql", ".pls", ".pks", ".pkb",
     ".ini",
     ]
+    
+    for i in file_list:
+        if any(i.endswith(ext) for ext in prog_exts):
+            file_list_t.append(i)
 
+    file_list = file_list_t
+    file_list.sort()
+    
     return file_list
