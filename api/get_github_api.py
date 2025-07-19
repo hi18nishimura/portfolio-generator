@@ -60,5 +60,5 @@ def getapi(url,token, commit_sha=None):
 
         except requests.exceptions.RequestException as e:
             print(f"[エラー] {sha} の取得失敗: {e}")
-    print("commit_data_list",commit_data_list)
+    #print("commit_data_list",commit_data_list)
     return commit_data_list #コミットメッセージとその時の差分の辞書のリスト

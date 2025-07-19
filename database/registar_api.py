@@ -9,6 +9,7 @@ import zipfile
 import os
 import sqlite3
 import streamlit as st
+from api.get_github_api import getapi
 
 def process(url = None, api_key = None, prj_id = None):
     
@@ -28,5 +29,5 @@ def process(url = None, api_key = None, prj_id = None):
 
     conn.commit()
     conn.close()
-
+    getapi(url, api_key)
     pass
