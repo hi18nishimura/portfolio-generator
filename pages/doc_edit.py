@@ -11,7 +11,7 @@ def render():
     left, right = st.columns([1,1])
     with left:
         st.subheader("Markdown 編集エリア")
-        edited_md = st.text_area("input", value=st.session_state.generated_md, height=300, key='edited_md')
+        edited_md = st.text_area("input", value=st.session_state.generated_md, height=400, key='edited_md')
 
         renew, save = st.columns([1,1])
         with renew:
