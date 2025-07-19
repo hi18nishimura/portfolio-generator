@@ -36,6 +36,11 @@ def process(file_list, add_prompt=None):
             file_summary += f"\n--- {fname} ---\n{content}\n"
         except Exception as e:
             file_summary += f"\n--- {fname} ---\n(読み込みに失敗しました: {e})\n"
+    
+    # 🔽 この直後に追加！
+    MAX_LEN = 6000  # または適宜調整
+    if len(file_summary) > MAX_LEN:
+        file_summary = file_summary[:MAX_LEN] + "\n...(中略: 長すぎるため省略されました)...\n"
 
     # 🔹1. 最初のプロンプト：要約と工夫点をJSON形式で取得
     base_prompt = (
@@ -75,20 +80,17 @@ def process(file_list, add_prompt=None):
         markdown = f"# プロジェクト概要\n{description}\n\n## 工夫されている点\n{improvements}"
 
     # 🔹3. 補足指示がある場合は、それに基づいて再生成（上記のdescription/improvementsを修正）
-    if add_prompt:
+    if add_prompt is not None:
         try:
             refine_prompt = (
-                "以下はあるプログラムプロジェクトに関する情報です。\n"
-                f"【ファイル一覧と中身】\n{file_summary}\n\n"
-                f"【現在の概要】\n{description}\n\n"
-                f"【現在の工夫点】\n{improvements}\n\n"
-                f"【現在のMarkdown形式の紹介文】\n{markdown}\n\n"
-                f"【補足指示】\n{add_prompt}\n\n"
-                "このプロジェクトの【現在の概要】、【現在の工夫点】、【現在のMarkdown形式の紹介文】はAIによって自動生成されたものですが、\n"
-                "その改善のための【補足指示】が与えられています。\n"
-                "【ファイル一覧と中身】を踏まえて、【補足指示】に従って，より適切な情報に修正してください。\n\n"
-
-                "出力形式：以下の3つのフィールドを含む**JSON形式**でお願いします。\n"
+                "以下のコードはある分類タスクを行うPythonプロジェクトです。\n"
+                "最初にAIによって自動生成された内容を、追加指示に基づいて修正してください。\n\n"
+                f"【ファイル内容（抜粋）】\n{file_summary}\n\n"
+                f"【自動生成された概要】\n{description}\n\n"
+                f"【自動生成された工夫点】\n{improvements}\n\n"
+                f"【Markdown形式の紹介文】\n{markdown}\n\n"
+                f"【追加指示】\n{add_prompt}\n\n"
+                "これらを考慮し、最終的な以下の出力を**JSON形式**で返してください：\n"
                 '{\n  "description": "...",\n  "improvements": "...",\n  "markdown": "..." \n}'
             )
 
