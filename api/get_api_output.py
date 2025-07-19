@@ -1,53 +1,58 @@
+#出力が安定しない場合は、プロジェクトの概要と工夫されている点について生成させます。
+#その後それらを入力として、マークダウン形式のドキュメントを生成させてください。
+
+#add_promptがNone出ない場合は、プロンプトにtextを追加してください。
+
+import sqlite3
 import json
 import requests
 import re
-import os
+#from get_program_file import filter_program_files  # 拡張子でフィルタリング
 
 API_KEY = "AIzaSyBMWSF9tAMtzl7M13SjNx4kGoFFBfKnEuY"
 API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
 
+# Gemini API呼び出し
 def generate_ai_output(prompt: str) -> str:
-    headers = {
-        "Content-Type": "application/json"
-    }
-    data = {
-        "contents": [{"parts": [{"text": prompt}]}]
-    }
-
+    headers = {"Content-Type": "application/json"}
+    data = {"contents": [{"parts": [{"text": prompt}]}]}
     response = requests.post(API_URL, headers=headers, json=data)
     if response.status_code == 200:
         return response.json()['candidates'][0]['content']['parts'][0]['text']
     else:
         raise Exception(f"APIエラー: {response.status_code}\n{response.text}")
 
+# DBからファイルパスを取得
+def get_file_list_from_db(prj_id):
+    conn = sqlite3.connect("prj.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT file_path FROM prj_files WHERE project_id = ?", (prj_id,))
+    file_list = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    return file_list
 
+# ファイル中身をAIに送って概要と工夫点を取得
 def process(file_list, add_prompt=None):
+    #file_list = filter_program_files(file_list)  # ← ここで拡張子でフィルタリング
+
     file_summary = ""
     for fname in file_list:
         try:
-            # with open(fname, "r", encoding="utf-8") as f:
-            with open(fname, "rb") as f:
-                file_bytes = f.read()
-            try:
-                content = file_bytes.decode("utf-8")
-            except UnicodeDecodeError:
-                content = file_bytes.decode("shift_jis", errors="replace")
-            # 長すぎるファイルは省略（1500文字）
-            if len(content) > 1500:
-                content = content[:1500] + "\n...（省略）"
+            with open(fname, "r", encoding="utf-8") as f:
+                content = f.read()
             file_summary += f"\n--- {fname} ---\n{content}\n"
         except Exception as e:
             file_summary += f"\n--- {fname} ---\n(読み込みに失敗しました: {e})\n"
 
     base_prompt = (
-        "以下はあるソフトウェアプロジェクトに含まれる複数のPythonファイルの中身です。\n"
-        "これらのコードを分析して、このソフトウェアが何をするものなのか（description）、\n"
-        "またコード上で工夫されている実装ポイント（improvements）を簡潔に抽出してください。\n"
-        "※ このプロンプト自身のコードや説明ではなく、以下のファイル内容だけをもとに判断してください。\n\n"
-        "【ファイル一覧と中身】\n"
-        f"{file_summary}"
-        "\n\n以下の形式で、必ずJSON形式だけを出力してください（説明やマークダウンは不要）：\n"
-        '{\n  "description": "（概要）",\n  "improvements": "（工夫された点）"\n}'
+        "以下はあるプログラムプロジェクトに含まれる複数のソースコードファイルの中身です。\n"
+        "出力はすべて日本語でお願いします。\n"
+        "これらのコードに書かれている内容をもとに、このプロジェクトの概要（description）と、\n"
+        "コード上で工夫されている点（improvements）を簡潔に抽出してください。\n"
+        "※ このプロンプト自身の説明ではなく、ファイル内容だけに基づいて出力してください。\n\n"
+        f"【ファイル一覧と中身】\n{file_summary}\n\n"
+        "次の形式で、**JSON形式のみ** を出力してください：\n"
+        '{\n  "description": "ここに概要",\n  "improvements": "ここに工夫点"\n}'
     )
 
     if add_prompt:
@@ -57,7 +62,6 @@ def process(file_list, add_prompt=None):
         result1 = generate_ai_output(base_prompt)
         print("=== Gemini Raw Output ===")
         print(result1)
-
         cleaned_result = re.sub(r"```json|```", "", result1).strip()
         parsed = json.loads(cleaned_result)
         description = parsed.get("description", "").strip()
@@ -72,32 +76,22 @@ def process(file_list, add_prompt=None):
             "以下の情報をもとに、マークダウン形式でプロジェクトの紹介文を作成してください。\n"
             f"- description: {description}\n"
             f"- improvements: {improvements}\n"
-            "見出しを含め、わかりやすい構成にしてください。"
+            "構成は、# 概要 → ## 工夫点 の順でわかりやすく出力してください。"
         )
         markdown = generate_ai_output(prompt2)
     except Exception:
         markdown = f"# プロジェクト概要\n{description}\n\n## 工夫されている点\n{improvements}"
-    
+
     return {
         "description": description,
         "improvements": improvements,
         "markdown": markdown
     }
 
-
-def extract_section(text, keyword):
-    keyword = keyword.lower()
-    for line in text.splitlines():
-        if keyword in line.lower():
-            parts = line.split(":", 1)
-            if len(parts) == 2:
-                return parts[1].strip()
-    return ""
-
-
-# if __name__ == "__main__":
-#     with open("file_list.txt", "r") as f:
-#         file_pos = [line.strip() for line in f if line.strip()]  # ← ここに解析したいファイルを列挙
-#     # print(file_pos)
-#     result = process(file_pos)
-#     print(result["markdown"])
+# メイン実行部
+if __name__ == "__main__":
+    prj_id = 1  # 対象プロジェクトID
+    file_list = get_file_list_from_db(prj_id)
+    result = process(file_list)
+    print("\n=== Markdown Output ===\n")
+    print(result["markdown"])
