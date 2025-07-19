@@ -4,8 +4,18 @@ import sqlite3
 import json
 import requests
 import re
+import os
 
-API_KEY = "AIzaSyBMWSF9tAMtzl7M13SjNx4kGoFFBfKnEuY"
+from dotenv import load_dotenv 
+import os
+
+# カレントディレクトリ直下の .env を明示的に指定
+dotenv_path = os.path.join(os.getcwd(), ".env")
+load_dotenv(dotenv_path, override=True)  # override=True で既存の同名環境変数を上書き
+
+API_KEY = os.getenv("GEMINI_API_KEY")
+if not API_KEY:
+    raise RuntimeError("環境変数 GEMINI_API_KEY が設定されていません。.env を確認してください。")
 API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
 
 # Gemini API呼び出し
@@ -84,16 +94,21 @@ def process(file_list, add_prompt=None):
     if add_prompt is not None:
         try:
             refine_prompt = (
-                "以下のコードはある分類タスクを行うPythonプロジェクトです。\n"
+                "以下はあるプログラムプロジェクトに含まれる複数のソースコードファイルの中身です。\n"
                 "最初にAIによって自動生成された内容を、追加指示に基づいて修正してください。\n\n"
-                f"【ファイル内容（抜粋）】\n{file_summary}\n\n"
-                f"【自動生成された概要】\n{description}\n\n"
-                f"【自動生成された工夫点】\n{improvements}\n\n"
+                f"【ファイル内容】\n{file_summary}\n\n"
+                f"【概要(description)】\n{description}\n\n"
+                f"【工夫点(improvements)】\n{improvements}\n\n"
                 f"【Markdown形式の紹介文】\n{markdown}\n\n"
                 f"【追加指示】\n{add_prompt}\n\n"
                 "これらを考慮し、最終的な以下の出力を**JSON形式**で返してください：\n"
                 '{\n  "description": "...",\n  "improvements": "...",\n  "markdown": "..." \n}'
             )
+            print("=== file_list ===")
+            for f in file_list:
+                print(f)
+            print("=== file_summary (preview) ===")
+            print(file_summary[:500])
 
             refined = generate_ai_output(refine_prompt)
             print("=== Gemini Refined Output ===")
@@ -113,7 +128,7 @@ def process(file_list, add_prompt=None):
         "markdown": markdown
     }
 
-
+"""
 # メイン実行部
 if __name__ == "__main__":
     prj_id = 1  # 対象プロジェクトID
@@ -121,3 +136,4 @@ if __name__ == "__main__":
     result = process(file_list)
     print("\n=== Markdown Output ===\n")
     print(result["markdown"])
+"""
