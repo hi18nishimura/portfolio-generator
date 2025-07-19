@@ -24,7 +24,7 @@ def render():
         if st.button('AI'):
             if st.session_state.correction:
                 #AIの出力の補正の処理
-                data = doc_svc.call_api_add(st.session_state.correction,st.session_state.work_prj_id)
+                data = doc_svc.call_api_add(st.session_state.work_prj_id,st.session_state.correction)
                 st.session_state.description = data['description']
                 st.session_state.improvements = data['improvements']
                 st.session_state.generated_md = data['markdown']
