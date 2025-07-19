@@ -8,7 +8,7 @@ env/
 venv/
 .venv/
 prj/
-
+md/
 # Environments
 .env
 

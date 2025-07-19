@@ -14,8 +14,8 @@ from database.registar_api import process as registar_api
 class FileService:
     def upload_files(self, prj_name,zip_file):
         return registar_prj(prj_name,zip_file)
-    def set_git_info(self, url, api_key):
-        registar_api(url, api_key)
+    def set_git_info(self, url, api_key, prj_id):
+        registar_api(url, api_key, prj_id)
 
 
 from api.generate import process as generate
