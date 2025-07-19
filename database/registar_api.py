@@ -29,5 +29,5 @@ def process(url = None, api_key = None, prj_id = None):
 
     conn.commit()
     conn.close()
-    getapi(url, api_key)
+    #getapi(url, api_key)
     pass
