@@ -1,0 +1,13 @@
+D:/hackathon/portfolio-generator-main/file_list/deep_sdf/__init__.py
+D:/hackathon/portfolio-generator-main/file_list/deep_sdf/data.py
+D:/hackathon/portfolio-generator-main/file_list/deep_sdf/mesh.py
+D:/hackathon/portfolio-generator-main/file_list/deep_sdf/utils.py
+D:/hackathon/portfolio-generator-main/file_list/deep_sdf/workspace.py
+D:/hackathon/portfolio-generator-main/file_list/preprocess_data.py
+D:/hackathon/portfolio-generator-main/file_list/generate_training_meshes.py
+D:/hackathon/portfolio-generator-main/file_list/plot_log.py
+D:/hackathon/portfolio-generator-main/file_list/reconstruct.py
+D:/hackathon/portfolio-generator-main/file_list/show_interior_samples.py
+D:/hackathon/portfolio-generator-main/file_list/train_deep_sdf.py
+D:/hackathon/portfolio-generator-main/file_list/evaluate.py
+D:/hackathon/portfolio-generator-main/file_list/examples/sofas/specs.json
