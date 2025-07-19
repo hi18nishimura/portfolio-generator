@@ -7,9 +7,8 @@ from pages.file_select import render as render_file_select
 from pages.doc_output import render as render_doc_output
 from pages.doc_edit import render as render_doc_edit
 
-from dotenv import load_dotenv 
-
 # 環境変数の読み込み
+from dotenv import load_dotenv
 load_dotenv()
 
 # 初期ページ設定
