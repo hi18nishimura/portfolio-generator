@@ -6,6 +6,19 @@ from services import ProjectService
 
 proj_svc = ProjectService()
 
+def get_load_md(path):
+    """Markdownファイルを読み込む"""
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            md = f.read()
+    except FileNotFoundError:
+        st.error("Markdownテンプレートファイルが見つかりません。")
+        md = ""
+    except Exception as e:
+        st.error(f"Markdownファイルの読み込みに失敗しました: {e}")
+        md = ""
+    return md
+
 def render():
     st.markdown("""
         <div style="text-align: center;">
@@ -51,7 +64,9 @@ def render():
     projects = proj_svc.list_projects()
     if projects:
         cols = st.columns(2)
-        for idx, name in enumerate(projects):
-            if cols[idx % 2].button(name):
-                st.info(f"'{name}' のページ遷移は未実装です。")
-    
+        for idx, prj_info in enumerate(projects):      
+            if cols[idx % 2].button(prj_info['project_name']):
+                st.session_state.generated_md = get_load_md(prj_info['path'])
+                st.session_state.page = 'doc_edit'
+                st.session_state.work_prj_id = prj_info['project_id']
+                st.rerun()

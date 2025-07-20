@@ -34,7 +34,7 @@ def process(projects_db_path="projects.db", prj_db_path="prj.db"):
         name_list.append(path)
         name = id_to_name.get(str(prj_id))  # prj_idを文字列として照合
         if name:
-            prj_list.append({"project_name": name, "path": path})
+            prj_list.append({"project_name": name, "path": path, "project_id": prj_id})
 
  #   print(prj_list)  # 空でもOK
     return prj_list  # 空でもOK
