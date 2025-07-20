@@ -148,13 +148,15 @@ def process(file_list, add_prompt=None):
             description = parsed_refined.get("description", "").strip()
             improvements = parsed_refined.get("improvements", "").strip()
             markdown = parsed_refined.get("markdown", "").strip()
+            development_process = parsed_refined.get("development process", "").strip()
         except Exception as e:
             print("補足指示による再生成に失敗:", e)
             # 元の値を使う
-
+    st.session_state.development_process = development_process
     return {
         "description": description,
         "improvements": improvements,
+        "development_process": development_process,
         "markdown": markdown
     }
 

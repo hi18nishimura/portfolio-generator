@@ -15,7 +15,7 @@ load_dotenv()
 if 'page' not in st.session_state:
     st.session_state.page = 'project_select'
 
-st.set_page_config(page_title="ポートフォリオ自動生成", layout="wide")
+st.set_page_config(page_title="ポートフォリオ自動生成", layout="wide",initial_sidebar_state="collapsed")
 
 # ページごとに render 関数を呼び出し
 if st.session_state.page == 'project_select':

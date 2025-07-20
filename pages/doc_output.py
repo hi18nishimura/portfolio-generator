@@ -20,21 +20,28 @@ def render():
         st.subheader("概要／工夫")
         st.text_area("システム概要", height=200, value=st.session_state.description,key='description_output')
         st.text_area("開発の工夫", height=200, value=st.session_state.improvements,key='improvements_output')
+        st.text_area("開発過程", height=200, value=st.session_state.development_process,key='development_process_output')
+
         st.text_input("追加指示", key='correction')
-        if st.button('更新'):
-            if st.session_state.correction:
-                #AIの出力の補正の処理
-                data = doc_svc.call_api_add(st.session_state.work_prj_id,st.session_state.correction)
-                st.session_state.description = data['description']
-                st.session_state.improvements = data['improvements']
-                st.session_state.generated_md = data['markdown']
+        
+        prompt_button,renew_button=st.columns([1,1])
+        with prompt_button:
+            if st.button('更新'):
+                if st.session_state.correction:
+                    #AIの出力の補正の処理
+                    data = doc_svc.call_api_add(st.session_state.work_prj_id,st.session_state.correction)
+                    st.session_state.description = data['description']
+                    st.session_state.improvements = data['improvements']
+                    st.session_state.development_process = data['development_process']
+                    st.session_state.generated_md = data['markdown']
+                    st.rerun()
+                else:
+                    st.warning("テキストを入力してください。")
+        with renew_button:
+            if st.button('次へ'):
+                st.session_state.page = 'doc_edit'
                 st.rerun()
-            else:
-                st.warning("テキストを入力してください。")
     with right:
         st.subheader("AI 生成結果プレビュー")
         st.session_state.generated_md = strip_fences(st.session_state.generated_md)
         st.markdown(st.session_state.generated_md)
-    if st.button('次へ'):
-        st.session_state.page = 'doc_edit'
-        st.rerun()
