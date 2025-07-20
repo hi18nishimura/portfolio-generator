@@ -5,9 +5,9 @@ import json
 import requests
 import re
 import os
+import streamlit as st
 
 from dotenv import load_dotenv 
-import os
 
 # カレントディレクトリ直下の .env を明示的に指定
 dotenv_path = os.path.join(os.getcwd(), ".env")
@@ -17,6 +17,21 @@ API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
     raise RuntimeError("環境変数 GEMINI_API_KEY が設定されていません。.env を確認してください。")
 API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
+
+def format_git_info_for_prompt(git_info_list):
+    """
+    Streamlitセッションに保存された git_info のリストを Gemini用プロンプトに整形する。
+    """
+    if not git_info_list:
+        return ""
+
+    prompt = "以下はGitHubのコミットメッセージと差分情報です。プロジェクトの意図や変更の目的を考慮してください。\n"
+    for i, item in enumerate(git_info_list):
+        prompt += f"\n### コミット {i+1}\n"
+        prompt += f"【メッセージ】\n{item['commit_message']}\n"
+        prompt += f"【差分】\n{item['diff'][:2000]}...\n"
+
+    return prompt
 
 # Gemini API呼び出し
 def generate_ai_output(prompt: str) -> str:
@@ -47,22 +62,27 @@ def process(file_list, add_prompt=None):
             file_summary += f"\n--- {fname} ---\n{content}\n"
         except Exception as e:
             file_summary += f"\n--- {fname} ---\n(読み込みに失敗しました: {e})\n"
-    
-    # 🔽 この直後に追加！
+
     MAX_LEN = 6000  # または適宜調整
     if len(file_summary) > MAX_LEN:
         file_summary = file_summary[:MAX_LEN] + "\n...(中略: 長すぎるため省略されました)...\n"
+    
+    #差分情報を組み込む
+    git_prompt = format_git_info_for_prompt(st.session_state.get("git_info", []))
 
-    # 🔹1. 最初のプロンプト：要約と工夫点をJSON形式で取得
+    if git_prompt:
+        file_summary += f"\n\n【GitHubコミット履歴】\n{git_prompt}\n"
+
+    # 1. 最初のプロンプト：概要と工夫点と開発過程をJSON形式で取得
     base_prompt = (
-        "以下はあるプログラムプロジェクトに含まれる複数のソースコードファイルの中身です。\n"
         "出力はすべて日本語でお願いします。\n"
+        "以下【ファイル一覧と中身】はあるプログラムプロジェクトに含まれる複数のソースコードファイルの中身とGitHubのコミット履歴です。\n"
         "これらのコードに書かれている内容をもとに、このプロジェクトの概要（description）と、\n"
-        "コード上で工夫されている点（improvements）を簡潔に抽出してください。\n"
+        "コード上で工夫されている点（improvements）と，コミット履歴に基づく開発過程(development process)を簡潔に抽出してください。\n"
         "※ このプロンプト自身の説明ではなく、ファイル内容だけに基づいて出力してください。\n\n"
         f"【ファイル一覧と中身】\n{file_summary}\n\n"
         "次の形式で、**JSON形式のみ** を出力してください：\n"
-        '{\n  "description": "ここに概要",\n  "improvements": "ここに工夫点"\n}'
+        '{\n  "description": "ここに概要",\n  "improvements": "ここに工夫点"\n　"development process": "ここに開発過程" \n}'
     )
 
     try:
@@ -73,37 +93,47 @@ def process(file_list, add_prompt=None):
         parsed = json.loads(cleaned_result)
         description = parsed.get("description", "").strip()
         improvements = parsed.get("improvements", "").strip()
+        development_process = parsed.get("development process", [])
+        if isinstance(development_process, list):
+            development_process_text = "\n".join(development_process)
+        else:
+            development_process_text = str(development_process).strip()
     except Exception as e:
         print("エラー内容:", e)
         description = "プロジェクト概要の生成に失敗しました。"
         improvements = "工夫されている点の抽出に失敗しました。"
+        development_process = "開発過程の抽出に失敗しました。"
 
-    # 🔹2. そのままMarkdown形式を作成（この時点では補足指示は使わない）
+    # 2. そのままMarkdown形式を作成（この時点では追加指示は使わない）
     try:
         prompt2 = (
             "以下の情報をもとに、マークダウン形式でプロジェクトの紹介文を作成してください。\n"
             f"- description: {description}\n"
             f"- improvements: {improvements}\n"
-            "構成は、# 概要 → ## 工夫点 の順でわかりやすく出力してください。"
+            f"- development process: {development_process_text}\n"
+            "構成は、# 概要 → ## 工夫点 → ## 開発過程　の順でわかりやすく出力してください。"
         )
         markdown = generate_ai_output(prompt2)
     except Exception:
-        markdown = f"# プロジェクト概要\n{description}\n\n## 工夫されている点\n{improvements}"
+        markdown = f"# プロジェクト概要\n{description}\n\n## 工夫されている点\n{improvements}\n\n# 開発過程\n{development_process}"
 
-    # 🔹3. 補足指示がある場合は、それに基づいて再生成（上記のdescription/improvementsを修正）
+    # 3. 追加指示がある場合は、それに基づいて再生成
     if add_prompt is not None:
         try:
             refine_prompt = (
-                "以下はあるプログラムプロジェクトに含まれる複数のソースコードファイルの中身です。\n"
-                "最初にAIによって自動生成された内容を、追加指示に基づいて修正してください。\n\n"
+                "以下【ファイル内容】はプログラムプロジェクトに含まれる複数のソースコードファイルの中身です。\n"
+                "以下【概要(description)】【工夫点(improvements)】【Markdown形式の紹介文】【開発過程(development process)】は【ファイル内容】を用いて自動生成された内容です。\n"
+                "最初にAIによって自動生成された内容を、【追加指示】に基づいて修正してください。\n\n"
                 f"【ファイル内容】\n{file_summary}\n\n"
                 f"【概要(description)】\n{description}\n\n"
                 f"【工夫点(improvements)】\n{improvements}\n\n"
                 f"【Markdown形式の紹介文】\n{markdown}\n\n"
+                f"【開発過程(development process)】\n{development_process_text}\n\n"
                 f"【追加指示】\n{add_prompt}\n\n"
                 "これらを考慮し、最終的な以下の出力を**JSON形式**で返してください：\n"
-                '{\n  "description": "...",\n  "improvements": "...",\n  "markdown": "..." \n}'
+                '{\n  "description": "...",\n  "improvements": "...",\n  "markdown": "..." \n "development process": "..." \n}'
             )
+
             print("=== file_list ===")
             for f in file_list:
                 print(f)
@@ -128,12 +158,3 @@ def process(file_list, add_prompt=None):
         "markdown": markdown
     }
 
-"""
-# メイン実行部
-if __name__ == "__main__":
-    prj_id = 1  # 対象プロジェクトID
-    file_list = get_file_list_from_db(prj_id)
-    result = process(file_list)
-    print("\n=== Markdown Output ===\n")
-    print(result["markdown"])
-"""
