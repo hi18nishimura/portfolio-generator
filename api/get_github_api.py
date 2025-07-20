@@ -2,6 +2,7 @@ import sqlite3
 import json
 import requests
 import re
+import streamlit as st
 
 def getapi(url,token, commit_sha=None):
     parts = url.split("/")
@@ -36,7 +37,7 @@ def getapi(url,token, commit_sha=None):
         print(f"[情報] 対象コミットハッシュ: {commit_sha} (指定されたコミット)")
 
 
-    commit_data_list = []
+    st.session_state.git_info = []
 
     for sha in commit_sha:
         url = f"https://api.github.com/repos/{owner}/{repo}/commits/{sha}"
@@ -53,7 +54,7 @@ def getapi(url,token, commit_sha=None):
                     diffs.append(f["patch"])
             diff_text = "\n".join(diffs)
 
-            commit_data_list.append({
+            st.session_state.git_info.append({
                 "commit_message": message,
                 "diff": diff_text
             })
@@ -61,4 +62,3 @@ def getapi(url,token, commit_sha=None):
         except requests.exceptions.RequestException as e:
             print(f"[エラー] {sha} の取得失敗: {e}")
     #print("commit_data_list",commit_data_list)
-    return commit_data_list #コミットメッセージとその時の差分の辞書のリスト

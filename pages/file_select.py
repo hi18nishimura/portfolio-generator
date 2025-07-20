@@ -25,7 +25,9 @@ def render():
             #zipファイルを処理するプログラムを起動
             st.session_state.work_prj_id = file_svc.upload_files(prj_name,uploaded)
             #Gitから情報を取得するプログラムを起動（実装予定）
-            file_svc.set_git_info(git_url, api_key, st.session_state.work_prj_id)
+            if git_url and api_key:
+                file_svc.set_git_info(git_url, api_key, st.session_state.work_prj_id)
+                #print("Git情報:", st.session_state.git_info)
             st.session_state.uploaded = uploaded
             # st.session_state.git_url = git_url
             # st.session_state.api_key = api_key
