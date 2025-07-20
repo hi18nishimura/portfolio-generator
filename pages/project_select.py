@@ -63,10 +63,19 @@ def render():
     #過去にプロジェクトがある場合、プロジェクト一覧を表示してほしいです。
     projects = proj_svc.list_projects()
     if projects:
-        cols = st.columns(2)
-        for idx, prj_info in enumerate(projects):      
-            if cols[idx % 2].button(prj_info['project_name']):
-                st.session_state.generated_md = get_load_md(prj_info['path'])
-                st.session_state.page = 'doc_edit'
-                st.session_state.work_prj_id = prj_info['project_id']
-                st.rerun()
+        st.subheader("プロジェクト一覧")
+        for prj_info in projects:
+            col1, col2 = st.columns([4, 1])
+
+            with col1:
+                if st.button(prj_info['project_name'], key=f"load_{prj_info['project_id']}"):
+                    st.session_state.generated_md = get_load_md(prj_info['path'])
+                    st.session_state.page = 'doc_edit'
+                    st.session_state.work_prj_id = prj_info['project_id']
+                    st.rerun()
+
+            with col2:
+                if st.button("🗑️", key=f"delete_{prj_info['project_id']}"):
+                    proj_svc.delete_project(prj_info['project_id'])
+                    st.success(f"'{prj_info['project_name']}' を削除しました")
+                    st.rerun()
