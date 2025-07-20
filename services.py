@@ -2,13 +2,41 @@
 services.py: データ操作やAPI呼び出しのスタブクラス
 具体的な実装は後で追加します。
 """
-
+import os
+import sqlite3
 from database.get_prj_list import process as get_prj_list
 
 class ProjectService:
     """プロジェクト一覧取得／作成"""
     def list_projects(self):
         return get_prj_list()
+    
+    def delete_project(self, project_id):
+        """指定された project_id を削除する"""
+        # project_files から path を取得（ファイル削除のため）
+        conn = sqlite3.connect("projects.db")
+        c = conn.cursor()
+        c.execute("SELECT path FROM project_files WHERE prj_id=?", (project_id,))
+        row = c.fetchone()
+        conn.close()
+
+        if row:
+            file_path = row[0]
+            if os.path.exists(file_path):
+                os.remove(file_path)  # ファイル削除
+
+        # DBから削除
+        conn = sqlite3.connect("projects.db")
+        c = conn.cursor()
+        c.execute("DELETE FROM project_files WHERE prj_id=?", (project_id,))
+        conn.commit()
+        conn.close()
+
+        conn2 = sqlite3.connect("prj.db")
+        c2 = conn2.cursor()
+        c2.execute("DELETE FROM prj WHERE project_id=?", (project_id,))
+        conn2.commit()
+        conn2.close()
 
 from database.registar_prj import process as registar_prj
 from database.registar_api import process as registar_api
