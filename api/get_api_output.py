@@ -7,7 +7,6 @@ import re
 import os
 
 from dotenv import load_dotenv 
-import os
 
 # カレントディレクトリ直下の .env を明示的に指定
 dotenv_path = os.path.join(os.getcwd(), ".env")
@@ -48,15 +47,14 @@ def process(file_list, add_prompt=None):
         except Exception as e:
             file_summary += f"\n--- {fname} ---\n(読み込みに失敗しました: {e})\n"
     
-    # 🔽 この直後に追加！
     MAX_LEN = 6000  # または適宜調整
     if len(file_summary) > MAX_LEN:
         file_summary = file_summary[:MAX_LEN] + "\n...(中略: 長すぎるため省略されました)...\n"
 
-    # 🔹1. 最初のプロンプト：要約と工夫点をJSON形式で取得
+    # 1. 最初のプロンプト：要約と工夫点をJSON形式で取得
     base_prompt = (
-        "以下はあるプログラムプロジェクトに含まれる複数のソースコードファイルの中身です。\n"
         "出力はすべて日本語でお願いします。\n"
+        "以下【ファイル一覧と中身】はあるプログラムプロジェクトに含まれる複数のソースコードファイルの中身です。\n"
         "これらのコードに書かれている内容をもとに、このプロジェクトの概要（description）と、\n"
         "コード上で工夫されている点（improvements）を簡潔に抽出してください。\n"
         "※ このプロンプト自身の説明ではなく、ファイル内容だけに基づいて出力してください。\n\n"
@@ -78,7 +76,7 @@ def process(file_list, add_prompt=None):
         description = "プロジェクト概要の生成に失敗しました。"
         improvements = "工夫されている点の抽出に失敗しました。"
 
-    # 🔹2. そのままMarkdown形式を作成（この時点では補足指示は使わない）
+    # 2. そのままMarkdown形式を作成（この時点では追加指示は使わない）
     try:
         prompt2 = (
             "以下の情報をもとに、マークダウン形式でプロジェクトの紹介文を作成してください。\n"
@@ -90,12 +88,13 @@ def process(file_list, add_prompt=None):
     except Exception:
         markdown = f"# プロジェクト概要\n{description}\n\n## 工夫されている点\n{improvements}"
 
-    # 🔹3. 補足指示がある場合は、それに基づいて再生成（上記のdescription/improvementsを修正）
+    # 3. 追加指示がある場合は、それに基づいて再生成
     if add_prompt is not None:
         try:
             refine_prompt = (
-                "以下はあるプログラムプロジェクトに含まれる複数のソースコードファイルの中身です。\n"
-                "最初にAIによって自動生成された内容を、追加指示に基づいて修正してください。\n\n"
+                "以下【ファイル内容】はプログラムプロジェクトに含まれる複数のソースコードファイルの中身です。\n"
+                "以下【概要(description)】【工夫点(improvements)】【Markdown形式の紹介文】は【ファイル内容】を用いて自動生成された内容です。\n"
+                "最初にAIによって自動生成された内容を、【追加指示】に基づいて修正してください。\n\n"
                 f"【ファイル内容】\n{file_summary}\n\n"
                 f"【概要(description)】\n{description}\n\n"
                 f"【工夫点(improvements)】\n{improvements}\n\n"
@@ -128,12 +127,3 @@ def process(file_list, add_prompt=None):
         "markdown": markdown
     }
 
-"""
-# メイン実行部
-if __name__ == "__main__":
-    prj_id = 1  # 対象プロジェクトID
-    file_list = get_file_list_from_db(prj_id)
-    result = process(file_list)
-    print("\n=== Markdown Output ===\n")
-    print(result["markdown"])
-"""
