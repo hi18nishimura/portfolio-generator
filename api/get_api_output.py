@@ -13,7 +13,9 @@ from dotenv import load_dotenv
 dotenv_path = os.path.join(os.getcwd(), ".env")
 load_dotenv(dotenv_path, override=True)  # override=True で既存の同名環境変数を上書き
 
-API_KEY = os.getenv("GEMINI_API_KEY")
+# API_KEY = os.getenv("GEMINI_API_KEY")
+#デプロイ時のたまには環境変数が取得できないことがあるので、st.secretsを使う
+API_KEY = st.secrets["GEMINI_API_KEY"]
 if not API_KEY:
     raise RuntimeError("環境変数 GEMINI_API_KEY が設定されていません。.env を確認してください。")
 API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"

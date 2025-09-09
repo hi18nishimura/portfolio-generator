@@ -11,6 +11,7 @@ prj/
 md/
 # Environments
 .env
+.streamlit/secrets.toml
 
 # Database
 *.db
