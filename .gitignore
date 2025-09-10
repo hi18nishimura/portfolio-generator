@@ -17,6 +17,10 @@ md/
 *.db
 *.sqlite
 *.sqlite3
+db_account.json
+
+# frontend
+node_modules/
 
 # anothor
 .DS_Store
