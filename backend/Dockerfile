@@ -2,7 +2,8 @@
 FROM python:3.11-slim
 WORKDIR /app
 COPY requirements.txt ./
-COPY db_account.json ./db_account.json
+# セキュリティ上の理由で、機密情報はイメージに含めない
+#COPY db_account.json ./db_account.json
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 EXPOSE 8000

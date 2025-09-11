@@ -12,3 +12,8 @@ services:
     build: ./backend
     ports:
       - "8000:8000"
+    secrets:
+      - db_account.json
+secrets:
+  db_account.json:
+    file: backend/db_account.json
