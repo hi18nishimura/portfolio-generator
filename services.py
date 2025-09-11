@@ -4,6 +4,18 @@ services.py: データ操作やAPI呼び出しのスタブクラス
 """
 import os
 import sqlite3
+
+from authentication.user_authentication import process as authentication
+from database.register_user import process as register_user
+
+class AuthenticationService:
+    """ユーザ認証サービス"""
+    def login(self, username, password):
+        return authentication(username, password)
+
+    def register(self, username, password):
+        return register_user(username, password)
+
 from database.get_prj_list import process as get_prj_list
 
 class ProjectService:

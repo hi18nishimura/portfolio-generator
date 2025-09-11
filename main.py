@@ -6,6 +6,7 @@ from pages.project_select import render as render_project_select
 from pages.file_select import render as render_file_select
 from pages.doc_output import render as render_doc_output
 from pages.doc_edit import render as render_doc_edit
+from pages.login_page import render as render_login_page
 
 # 環境変数の読み込み
 from dotenv import load_dotenv
@@ -13,12 +14,14 @@ load_dotenv()
 
 # 初期ページ設定
 if 'page' not in st.session_state:
-    st.session_state.page = 'project_select'
+    st.session_state.page = 'login_page'
 
 st.set_page_config(page_title="ポートフォリオ自動生成", layout="wide",initial_sidebar_state="collapsed")
 
 # ページごとに render 関数を呼び出し
-if st.session_state.page == 'project_select':
+if st.session_state.page == 'login_page':
+    render_login_page() 
+elif st.session_state.page == 'project_select':
     render_project_select()
 elif st.session_state.page == 'file_select':
     render_file_select()

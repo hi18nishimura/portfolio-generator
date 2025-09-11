@@ -1,6 +1,6 @@
 import sqlite3
 
-def process(projects_db_path="projects.db", prj_db_path="prj.db"):
+def process(projects_db_path="./database/db/projects.db", prj_db_path="./database/db/prj.db"):
     """project_name と readme パスを対応づけて取得する"""
     try:
         # project.db: prj_id, path
@@ -21,7 +21,6 @@ def process(projects_db_path="projects.db", prj_db_path="prj.db"):
         prj_rows = cursor2.fetchall()
         conn2.close()
     except sqlite3.Error as e:
-        print(f"[Error] Failed to fetch from prj.db: {e}")
         prj_rows = []
 
     # project_id → name の辞書を作る（文字列化して対応）

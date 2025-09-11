@@ -16,7 +16,7 @@ def process(url = None, api_key = None, prj_id = None):
     if url == None or  api_key == None or prj_id ==None :
         return
     
-    conn = sqlite3.connect('prj.db')
+    conn = sqlite3.connect('./database/db/prj.db')
     cursor = conn.cursor()   
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS gits (
