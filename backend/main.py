@@ -11,9 +11,13 @@ app = FastAPI()
 firestore_project_id = os.getenv("FIRESTORE_PROJECT_ID")
 firestore_client = firestore.Client(project=firestore_project_id)
 
-@app.get("/")
+# @app.get("/")
+# def read_root():
+#     # Firestoreからデータ取得例
+#     docs = firestore_client.collection("sample").stream()
+#     items = [{"id": doc.id, **doc.to_dict()} for doc in docs]
+#     return {"message": "Hello from FastAPI!", "items": items}
+
+@app.get('/')
 def read_root():
-    # Firestoreからデータ取得例
-    docs = firestore_client.collection("sample").stream()
-    items = [{"id": doc.id, **doc.to_dict()} for doc in docs]
-    return {"message": "Hello from FastAPI!", "items": items}
+    return {"message": "Hello, this is the root!!!"}
