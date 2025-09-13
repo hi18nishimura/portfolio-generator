@@ -2,3 +2,6 @@ fastapi
 uvicorn[standard]
 google-cloud-firestore
 python-dotenv
+bcrypt
+firebase-admin
+python-jose
