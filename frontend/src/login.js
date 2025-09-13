@@ -2,7 +2,13 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Tabs, Tab, TextField, Button, Typography } from "@mui/material";
 
+import { useEffect } from "react";
+
 const LoginRegisterForm = () => {
+	// ページ表示時にJWTトークンを削除
+	useEffect(() => {
+		localStorage.removeItem('access_token');
+	}, []);
 	const navigate = useNavigate();
 	// 新規登録フォームの状態
 	const [registerId, setRegisterId] = useState("");
@@ -15,41 +21,81 @@ const LoginRegisterForm = () => {
 	const [loginPassword, setLoginPassword] = useState("");
 	const [loginError, setLoginError] = useState("");
 
-	// タブの状態
+	// タブの状態（初期値: ログイン）
 	const [tab, setTab] = useState(0);
+    const API_URL = process.env.REACT_APP_API_URL;
+    const API_VERSION = process.env.REACT_APP_API_VERSION;
 
-	// 新規登録の送信処理（仮）
-	const handleRegister = (e) => {
+    const getApiUrl = (endpoint) => {
+        return `${API_URL}/${API_VERSION}/${endpoint}`;
+    };
+
+	// 新規登録の送信処理
+	const handleRegister = async (e) => {
 		e.preventDefault();
-		// デバッグ用：バリデーションを無効化
-		// if (!registerId || !registerPassword) {
-		//     setRegisterError("ユーザーIDとパスワードは必須です。");
-		//     return;
-		// }
 		setRegisterError("");
-		// alert("新規登録: " + registerId); // デバッグ用ダイアログを削除
-		navigate("/project");
+		try {
+            const url = getApiUrl('register');
+            console.log("Register URL:", url); // デバッグ用
+			const response = await fetch(url, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					user_id: registerId,
+					password: registerPassword,
+					email: registerEmail
+				})
+			});
+			if (response.ok) {
+				navigate("/project");
+			} else {
+				const data = await response.json();
+				setRegisterError(data.detail || "登録に失敗しました");
+			}
+		} catch (error) {
+			setRegisterError("通信エラーが発生しました");
+		}
 	};
 
-	// ログインの送信処理（仮）
-	const handleLogin = (e) => {
+	// ログインの送信処理
+	const handleLogin = async (e) => {
 		e.preventDefault();
 		if (!loginId || !loginPassword) {
 			setLoginError("ユーザーIDとパスワードは必須です。");
 			return;
 		}
 		setLoginError("");
-		alert("ログイン: " + loginId);
-		navigate("/project");
+		try {
+			const url = getApiUrl('login');
+			const response = await fetch(url, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					user_id: loginId,
+					password: loginPassword
+				})
+			});
+			if (response.ok) {
+				const data = await response.json();
+				// アクセストークンを保存（localStorage）
+				localStorage.setItem('access_token', data.access_token);
+				navigate("/project");
+			} else {
+				const data = await response.json();
+				setLoginError(data.detail || "ログインに失敗しました");
+			}
+		} catch (error) {
+			setLoginError("通信エラーが発生しました");
+		}
 	};
 
 	return (
 		<Box maxWidth={400} mx="auto" mt={10} p={3} border={1} borderRadius={2} boxShadow={3}>
 			<Tabs value={tab} onChange={(e, newValue) => setTab(newValue)} centered>
-				<Tab label="新規登録" />
 				<Tab label="ログイン" />
+				<Tab label="新規登録" />
 			</Tabs>
-			{tab === 0 && (
+			{tab === 1 && (
 				<Box component="form" onSubmit={handleRegister} mt={2}>
 					<TextField
 						label="ユーザーID"
@@ -80,8 +126,6 @@ const LoginRegisterForm = () => {
 					{registerError && (
 						<Typography color="error" variant="body2" mt={1}>{registerError}</Typography>
 					)}
-                    {/* パスワードを忘れた場合のワンタイムパスワード発行UI（クリックで表示） */}
-					<ForgotPasswordSection />
 					<Button
 						variant="contained"
 						color="primary"
@@ -94,7 +138,7 @@ const LoginRegisterForm = () => {
 					</Button>
 				</Box>
 			)}
-					{tab === 1 && (
+					{tab === 0 && (
 						<>
 							<Box component="form" onSubmit={handleLogin} mt={2}>
 								<TextField
@@ -119,6 +163,8 @@ const LoginRegisterForm = () => {
 								{loginError && (
 									<Typography color="error" variant="body2" mt={1}>{loginError}</Typography>
 								)}
+								{/* パスワードを忘れた場合のワンタイムパスワード発行UI（クリックで表示） */}
+								<ForgotPasswordSection />
 								<Button variant="contained" color="primary" type="submit" fullWidth sx={{ mt: 2 }}>
 									ログイン
 								</Button>
