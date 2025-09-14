@@ -18,6 +18,7 @@ md/
 *.sqlite
 *.sqlite3
 db_account.json
+hackathon-25-july-firebase-adminsdk-fbsvc-21e2634d88.json
 
 # frontend
 node_modules/
