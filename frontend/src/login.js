@@ -47,7 +47,16 @@ const LoginRegisterForm = () => {
 				})
 			});
 			if (response.ok) {
-				navigate("/home");
+				//navigate("/home");
+				// 新規登録した場合、そのままhomeに遷移する
+				// ただし、JWTトークンを取得してから遷移する
+				const data = await response.json();
+				if (data.access_token) {
+					localStorage.setItem('access_token', data.access_token);
+					navigate("/home");
+				} else {
+					setRegisterError("登録は成功しましたが、認証情報の取得に失敗しました。");
+				}
 			} else {
 				const data = await response.json();
 				setRegisterError(data.detail || "登録に失敗しました");

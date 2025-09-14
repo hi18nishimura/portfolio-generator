@@ -26,7 +26,8 @@ const HomePage = () => {
 					const data = await res.json();
 					setProtectedResult(data);
 				} else {
-					setProtectedResult({ error: '認証失敗または権限なし' });
+					localStorage.removeItem('access_token');
+					navigate('/');
 				}
 			} catch (err) {
 				setProtectedResult({ error: '通信エラー' });

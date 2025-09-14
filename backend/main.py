@@ -26,10 +26,9 @@ SECRET_KEY = settings.JWT_SECRET_KEY
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
+
 # JWT認証用関数
-def get_current_user(token: str = None):
-    if token is None:
-        raise HTTPException(status_code=401, detail="認証トークンが必要です")
+def get_current_user(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("sub")
@@ -38,6 +37,15 @@ def get_current_user(token: str = None):
         return user_id
     except JWTError:
         raise HTTPException(status_code=401, detail="トークンが不正または期限切れです")
+
+# JWT生成メソッド
+def create_access_token(user_id: str, expires_delta: timedelta = None):
+    expire = datetime.now(tz=timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    payload = {
+        "sub": user_id,
+        "exp": expire
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 # 認証済みユーザーのみアクセス可能なテスト用エンドポイント
 from fastapi.security import OAuth2PasswordBearer
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"/{API_VERSION}/login")
@@ -64,6 +72,7 @@ app.add_middleware(
 @app.get('/')
 def read_root():
     return {"message": "Hello, this is the root!!!"}
+
 
 @app.post(f"/{API_VERSION}/register")
 async def register_user(request: RegisterRequest):
@@ -93,13 +102,16 @@ async def register_user(request: RegisterRequest):
 
         # Firestoreにユーザー情報を登録
         users_ref.add(user_data)
-        return {"message": "登録成功", "user_id": request.user_id}
+        # JWT発行
+        access_token = create_access_token(request.user_id)
+        return {"access_token": access_token, "token_type": "bearer"}
     except HTTPException as e:
         # FastAPIのHTTPExceptionはそのままraise
         raise e
     except Exception as e:
         print(f"登録エラー: {e}")
         raise HTTPException(status_code=500, detail="サーバーエラーが発生しました")
+
 
 @app.post(f"/{API_VERSION}/login")
 async def login_user(request: LoginRequest):
@@ -115,13 +127,8 @@ async def login_user(request: LoginRequest):
         if not bcrypt.checkpw(request.password.encode('utf-8'), user["password"].encode('utf-8')):
             raise HTTPException(status_code=401, detail="ユーザーIDまたはパスワードが間違っています")
 
-        # JWT生成
-        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        payload = {
-            "sub": user["user_id"],
-            "exp": expire
-        }
-        access_token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+        # JWT発行
+        access_token = create_access_token(user["user_id"])
         return {"access_token": access_token, "token_type": "bearer"}
     except HTTPException as e:
         raise e
