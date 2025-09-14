@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const ProjectPage = () => {
+const HomePage = () => {
 	const navigate = useNavigate();
 	const [protectedResult, setProtectedResult] = useState(null);
 	useEffect(() => {
@@ -46,4 +46,4 @@ const ProjectPage = () => {
 	);
 };
 
-export default ProjectPage;
+export default HomePage;

@@ -6,9 +6,9 @@ import { useEffect } from "react";
 
 const LoginRegisterForm = () => {
 	// ページ表示時にJWTトークンを削除
-	useEffect(() => {
-		localStorage.removeItem('access_token');
-	}, []);
+	// useEffect(() => {
+	// 	localStorage.removeItem('access_token');
+	// }, []);
 	const navigate = useNavigate();
 	// 新規登録フォームの状態
 	const [registerId, setRegisterId] = useState("");
@@ -47,7 +47,7 @@ const LoginRegisterForm = () => {
 				})
 			});
 			if (response.ok) {
-				navigate("/project");
+				navigate("/home");
 			} else {
 				const data = await response.json();
 				setRegisterError(data.detail || "登録に失敗しました");
@@ -79,7 +79,7 @@ const LoginRegisterForm = () => {
 				const data = await response.json();
 				// アクセストークンを保存（localStorage）
 				localStorage.setItem('access_token', data.access_token);
-				navigate("/project");
+				navigate("/home");
 			} else {
 				const data = await response.json();
 				setLoginError(data.detail || "ログインに失敗しました");
