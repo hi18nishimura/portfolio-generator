@@ -106,6 +106,4 @@ def generate_gemini_response(prompt: str):
       }
     },
   )
-  print("gemini API呼び出し後")
-  print(f"Gemini API Response: {response.text}")
   return response

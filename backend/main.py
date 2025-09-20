@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 import bcrypt
 from module.model import RegisterRequest, LoginRequest, GeminiPromptRequest
-from module.firebase_caller import register_user_firestore, authenticate_user_firestore
+from module.firebase_caller import register_user_firestore, authenticate_user_firestore,save_project_firestore,load_projects_firestore
 from module.settings import settings
 from module.github_caller import fetch_github_repo, fetch_github_issues, fetch_github_pull_requests, fetch_github_events, fetch_github_releases
 from module.gemini_caller import prompt_github_info,generate_gemini_response
@@ -36,7 +36,7 @@ def get_current_user(token: str):
         user_id = payload.get("sub")
         if user_id is None:
             raise HTTPException(status_code=401, detail="トークンが不正です")
-        return True
+        return user_id  # ← Trueではなくuser_idを返す
     except JWTError:
         raise HTTPException(status_code=401, detail="トークンが不正または期限切れです")
 
@@ -109,9 +109,7 @@ async def login_user(request: LoginRequest):
 @app.post(f"/{API_VERSION}/project_generate")
 async def gemini_prompt_api(request: GeminiPromptRequest, token: str = Depends(oauth2_scheme)):
     # 認証チェック
-    if not get_current_user(token):
-        raise HTTPException(status_code=401, detail="認証トークンが不正です")
-    print(request)
+    user_id = get_current_user(token)
     # GeminiAPI呼び出し
     try:
         file_contents, commit_history = fetch_github_repo(request.githubUser, request.githubRepo)
@@ -135,8 +133,21 @@ async def gemini_prompt_api(request: GeminiPromptRequest, token: str = Depends(o
             release=release_info if selected.get("releases") else None,
             additional_instructions=request.geminiPrompt if request.geminiPrompt else ""
         )
-        return generate_gemini_response(prompt)
+        output = generate_gemini_response(prompt)
+        save_project_firestore(user_id, prompt, output, prj_name=request.projectName, prj_description=request.projectDes or "")
+        return output
     except Exception as e:
         print(f"GitHubリポジトリ取得エラー: {e}")
         raise HTTPException(status_code=500, detail="GitHubリポジトリの情報取得に失敗しました")
-    
+
+# プロジェクトデータを読み込むAPI
+@app.get(f"/{API_VERSION}/load_projects")
+async def load_projects(token: str = Depends(oauth2_scheme)):
+    # 認証チェック
+    user_id = get_current_user(token)
+    try:
+        projects = load_projects_firestore(user_id)
+        return {"projects": projects}
+    except Exception as e:
+        print(f"プロジェクトデータ取得エラー: {e}")
+        raise HTTPException(status_code=500, detail="プロジェクトデータの取得に失敗しました")
