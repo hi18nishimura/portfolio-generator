@@ -41,7 +41,7 @@ const GeminiResult = ({ result }) => {
       // 句点の直後にカッコやバッククォート、改行が続く場合はsplitしない
       .replace(/([。．])([）)】】』』】】\`"]|\s*\n)/g, '$1$2')
       // 句点の直後に何もなければ改行を挿入
-      .replace(/([。．])(?=[^）)】】』』】】\`"\s\n])/g, '$1\n')
+      .replace(/([。．])(?=[^）)】』\`"\s\n])/g, '$1\n')
       .split(/\n+/)
       .map(s => s.trim())
       .filter(Boolean);
@@ -158,9 +158,17 @@ const GeminiResult = ({ result }) => {
                 <Box key={idx}>
                   {/* Q 吹き出し */}
                   <Box sx={{ display: 'flex', mb: 0.5 }}>
-                    <Box sx={{ bgcolor: '#fff', border: '1px solid #d81b60', borderRadius: 2, px: 2, py: 1, maxWidth: '80%', fontWeight: 'bold', position: 'relative', ml: 0 }}>
-                      <span style={{ color: '#d81b60' }}>Q.</span> {q.question}
-                      <Box sx={{
+                    <Box sx={{
+                      bgcolor: '#fff',
+                      border: '1px solid #d81b60',
+                      borderRadius: 2,
+                      px: 2,
+                      py: 1,
+                      maxWidth: '80%',
+                      fontWeight: 'bold',
+                      position: 'relative',
+                      ml: 0,
+                      '&::after': {
                         content: '""',
                         position: 'absolute',
                         left: 16,
@@ -170,14 +178,24 @@ const GeminiResult = ({ result }) => {
                         borderLeft: '8px solid transparent',
                         borderRight: '8px solid transparent',
                         borderTop: '8px solid #d81b60',
-                      }} />
+                      }
+                    }}>
+                      <span style={{ color: '#d81b60' }}>Q.</span> {q.question}
                     </Box>
                   </Box>
                   {/* A 吹き出し */}
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.5 }}>
-                    <Box sx={{ bgcolor: '#d81b60', color: '#fff', borderRadius: 2, px: 2, py: 1, maxWidth: '80%', fontWeight: 'bold', position: 'relative', mr: 0 }}>
-                      <span style={{ color: '#fff' }}>A.</span> {q.answerTips}
-                      <Box sx={{
+                    <Box sx={{
+                      bgcolor: '#d81b60',
+                      color: '#fff',
+                      borderRadius: 2,
+                      px: 2,
+                      py: 1,
+                      maxWidth: '80%',
+                      fontWeight: 'bold',
+                      position: 'relative',
+                      mr: 0,
+                      '&::after': {
                         content: '""',
                         position: 'absolute',
                         right: 16,
@@ -187,7 +205,9 @@ const GeminiResult = ({ result }) => {
                         borderLeft: '8px solid transparent',
                         borderRight: '8px solid transparent',
                         borderTop: '8px solid #d81b60',
-                      }} />
+                      }
+                    }}>
+                      <span style={{ color: '#fff' }}>A.</span> {q.answerTips}
                     </Box>
                   </Box>
                 </Box>

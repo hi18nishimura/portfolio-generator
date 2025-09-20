@@ -88,23 +88,25 @@ const HomePage = () => {
 		setFormData((prev) => ({ ...prev, [name]: value }));
 	};
 
-		// バリデーション
-		const requiredFields = ["projectName"];
-		const isFormValid = requiredFields.every((key) => formData[key]?.trim());
+			// バリデーション
+			const requiredFields = ["projectName"];
+			const isFormValid = React.useMemo(() => {
+			  return requiredFields.every((key) => formData[key]?.trim());
+			}, [formData, requiredFields]);
 
-		// Geminiプロンプト送信
-			const handleSubmit = async (e, submitData) => {
-				e.preventDefault();
-				const raw = submitData || formData;
-				// Model.pyのGeminiPromptRequestに合わせてキー名を変換
-				const payload = {
-					projectName: raw.projectName || "",
-					projectDes: raw.description || "",
-					githubUser: raw.githubUser || "",
-					githubRepo: raw.githubRepo || "",
-					selectedOptions: raw.selectedOptions || {},
-					geminiPrompt: raw.geminiPrompt || ""
-				};
+				// Geminiプロンプト送信
+				const handleSubmit = async (e, submitData) => {
+					e.preventDefault();
+					const raw = submitData || formData;
+								// Model.pyのGeminiPromptRequestに合わせてキー名・構造を修正
+								const payload = {
+								  projectName: raw.projectName || "",
+								  projectDes: raw.description || "",
+								  githubUser: raw.githubUser || "",
+								  githubRepo: raw.githubRepo || "",
+								  selectedOptions: raw.selectedOptions || {},
+								  geminiPrompt: raw.geminiPrompt || ""
+								};
 				const token = localStorage.getItem('access_token');
 				if (!token) {
 					alert('認証トークンがありません。再ログインしてください。');
