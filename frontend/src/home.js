@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { useTheme, useMediaQuery } from "@mui/material";
 import { useNavigate } from "react-router-dom";
@@ -23,8 +22,6 @@ import MenuIcon from '@mui/icons-material/Menu';
 
 // Github取得オプション
 const GITHUB_OPTIONS = [
-	{ key: "contents", label: "Contents" },
-	{ key: "commit", label: "Commit" },
 	{ key: "issue", label: "Issue" },
 	{ key: "pull_request", label: "Pull Request" },
 	{ key: "events", label: "Events" },
@@ -38,21 +35,20 @@ const DUMMY_PROJECTS = [
 	{ id: 3, name: "Blog System", description: "ブログ投稿管理" }
 ];
 
-// --- ここは削除（重複宣言） ---
-
 const SIDEBAR_WIDTH = 260;
 const SIDEBAR_COLLAPSED_WIDTH = 56;
 
 const NEW_PROJECT = { id: 'new', name: '', description: '' };
 
 const HomePage = () => {
+	const [apiResult, setApiResult] = useState(null);
 	const navigate = useNavigate();
 	const [protectedResult, setProtectedResult] = useState(null);
 	// 初期選択は新規作成
 	const [selectedProject, setSelectedProject] = useState(NEW_PROJECT);
 	const [githubUser, setGithubUser] = useState("");
 	const [githubRepo, setGithubRepo] = useState("");
-	const [selectedOptions, setSelectedOptions] = useState([]);
+	const [selectedOptions, setSelectedOptions] = useState({});
 	const [projectName, setProjectName] = useState("");
 	const [projectDesc, setProjectDesc] = useState("");
 	const [geminiPrompt, setGeminiPrompt] = useState("");
@@ -106,7 +102,7 @@ const HomePage = () => {
 			setProjectDesc("");
 			setGithubUser("");
 			setGithubRepo("");
-			setSelectedOptions([]);
+			setSelectedOptions({});
 			setGeminiPrompt("");
 		} else {
 			setProjectName(project.name);
@@ -116,25 +112,49 @@ const HomePage = () => {
 
 	// チェックボックス選択
 	const handleCheckboxChange = (key) => {
-		setSelectedOptions((prev) =>
-			prev.includes(key)
-				? prev.filter((k) => k !== key)
-				: [...prev, key]
-		);
+		setSelectedOptions((prev) => ({
+			...prev,
+			[key]: !prev[key]
+		}));
 	};
 
-	// Geminiプロンプト送信（仮）
-	const handleSubmit = (e) => {
+	// Geminiプロンプト送信
+	const handleSubmit = async (e) => {
 		e.preventDefault();
-		// ここでAPI送信など
-		alert("送信しました！\n" + JSON.stringify({
-			projectName,
-			projectDesc,
-			githubUser,
-			githubRepo,
-			selectedOptions,
-			geminiPrompt
-		}, null, 2));
+		const token = localStorage.getItem('access_token');
+		if (!token) {
+			alert('認証トークンがありません。再ログインしてください。');
+			navigate('/');
+			return;
+		}
+		try {
+			const apiUrl = process.env.REACT_APP_API_URL;
+			const apiVersion = process.env.REACT_APP_API_VERSION;
+			const url = `${apiUrl}/${apiVersion}/project_generate`;
+			const res = await fetch(url, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}`
+				},
+				body: JSON.stringify({
+					projectName,
+					projectDes: projectDesc,
+					githubUser,
+					githubRepo,
+					selectedOptions,
+					geminiPrompt
+				})
+			});
+			if (!res.ok) {
+				const err = await res.json();
+				throw new Error(err.detail || 'APIエラー');
+			}
+			const data = await res.json();
+			setApiResult(data);
+		} catch (err) {
+			alert("送信失敗: " + err.message);
+		}
 	};
 
 	// サイドバーのマウスイベント
@@ -285,69 +305,133 @@ const HomePage = () => {
 							boxSizing: "border-box"
 						}}
 					>
-						
-						<form onSubmit={handleSubmit}>
-							<Typography variant="h5" sx={{ mb: 2, color: "#333" }}>プロジェクト情報</Typography>
-							<TextField
-								label="プロジェクト名"
-								value={projectName}
-								onChange={e => setProjectName(e.target.value)}
-								fullWidth
-								sx={{ mb: 2 }}
-							/>
-							<TextField
-								label="プロジェクトの説明"
-								value={projectDesc}
-								onChange={e => setProjectDesc(e.target.value)}
-								fullWidth
-								multiline
-								minRows={2}
-								sx={{ mb: 2 }}
-							/>
-							<Divider sx={{ my: 2 }} />
-							<Typography variant="subtitle1" sx={{ mb: 1 }}>Github情報</Typography>
-							<Box sx={{ display: "flex", gap: 2, mb: 2 }}>
-								<TextField
-									label="Githubアカウント名"
-									value={githubUser}
-									onChange={e => setGithubUser(e.target.value)}
-									sx={{ flex: 1 }}
-								/>
-								<TextField
-									label="Githubリポジトリ名"
-									value={githubRepo}
-									onChange={e => setGithubRepo(e.target.value)}
-									sx={{ flex: 1 }}
-								/>
+						{apiResult ? (
+							<Box>
+								<Typography variant="h6" sx={{ mb: 2, color: '#333' }}>Gemini出力</Typography>
+								{(() => {
+									// 1. text部分をパース
+									let parsed = null;
+									try {
+										const text = apiResult.candidates?.[0]?.content?.parts?.[0]?.text;
+										parsed = text ? JSON.parse(text) : null;
+									} catch (e) {}
+									if (!parsed) return <Typography color="error">出力のパースに失敗しました</Typography>;
+									return (
+										<Box>
+											<Typography variant="subtitle1" sx={{ fontWeight: 600 }}>概要</Typography>
+											<Typography sx={{ mb: 2 }}>{parsed.projectOverview?.summary}</Typography>
+											<Typography variant="subtitle1" sx={{ fontWeight: 600 }}>技術的な工夫点</Typography>
+											<ul>
+												{parsed.projectOverview?.technicalInnovations?.map((item, i) => (
+													<li key={i}>{item}</li>
+												))}
+											</ul>
+											<Typography variant="subtitle1" sx={{ fontWeight: 600 }}>開発ストーリー</Typography>
+											<Typography sx={{ mb: 2 }}>{parsed.projectOverview?.developmentStory}</Typography>
+											{/* 必要に応じてinterviewAnalysisも同様に展開 */}
+										</Box>
+									);
+								})()}
+								<Button variant="outlined" fullWidth sx={{ mt: 2 }} onClick={() => setApiResult(null)}>
+									入力フォームに戻る
+								</Button>
 							</Box>
-							<Typography variant="subtitle1" sx={{ mb: 1 }}>取得したい情報</Typography>
-							<FormGroup row sx={{ mb: 2 }}>
-								{GITHUB_OPTIONS.map(opt => (
-									<FormControlLabel
-										key={opt.key}
-										control={
-											<Checkbox
-												checked={selectedOptions.includes(opt.key)}
-												onChange={() => handleCheckboxChange(opt.key)}
-											/>
-										}
-										label={opt.label}
+						) : (
+							<form onSubmit={handleSubmit}>
+								<Typography variant="h5" sx={{ mb: 2, color: "#333" }}>Github情報</Typography>
+								<Typography variant="subtitle1" sx={{ mb: 1 }}>取得するプロジェクト</Typography>
+								<Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+									<Box sx={{ flex: 1 }}>
+										<Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+											<Typography variant="body2" sx={{ fontWeight: 500 }}>
+												Githubアカウント名
+											</Typography>
+											<Typography component="span" sx={{ color: 'error.main', ml: 0.5 }}>*</Typography>
+										</Box>
+										<TextField
+											value={githubUser}
+											onChange={e => setGithubUser(e.target.value)}
+											fullWidth
+										/>
+									</Box>
+									<Box sx={{ flex: 1 }}>
+										<Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+											<Typography variant="body2" sx={{ fontWeight: 500 }}>
+												Githubリポジトリ名
+											</Typography>
+											<Typography component="span" sx={{ color: 'error.main', ml: 0.5 }}>*</Typography>
+										</Box>
+										<TextField
+											value={githubRepo}
+											onChange={e => setGithubRepo(e.target.value)}
+											fullWidth
+										/>
+									</Box>
+								</Box>
+								<Typography variant="subtitle1" sx={{ mb: 1 }}>取得したい情報</Typography>
+								<FormGroup row sx={{ mb: 2 }}>
+									{GITHUB_OPTIONS.map(opt => (
+										<FormControlLabel
+											key={opt.key}
+											control={
+												<Checkbox
+													checked={!!selectedOptions[opt.key]}
+													onChange={() => handleCheckboxChange(opt.key)}
+												/>
+											}
+											label={opt.label}
+										/>
+									))}
+								</FormGroup>
+								<TextField
+									label="Geminiに追加するプロンプト（任意）"
+									value={geminiPrompt}
+									onChange={e => setGeminiPrompt(e.target.value)}
+									fullWidth
+									multiline
+									minRows={2}
+									sx={{ mb: 2 }}
+								/>
+								<Divider sx={{ my: 2 }} />
+								<Typography variant="h5" sx={{ mb: 2, color: "#333" }}>プロジェクト情報</Typography>
+								<Box sx={{ mb: 2 }}>
+									<Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+										<Typography variant="body1" sx={{ fontWeight: 500 }}>
+											プロジェクト名
+										</Typography>
+										<Typography component="span" sx={{ color: 'error.main', ml: 0.5 }}>*</Typography>
+									</Box>
+									<TextField
+										value={projectName}
+										onChange={e => setProjectName(e.target.value)}
+										fullWidth
 									/>
-								))}
-							</FormGroup>
-							<TextField
-								label="Geminiに追加するプロンプト（任意）"
-								value={geminiPrompt}
-								onChange={e => setGeminiPrompt(e.target.value)}
-								fullWidth
-								multiline
-								minRows={2}
-								sx={{ mb: 2 }}
-							/>
-							<Button variant="contained" color="primary" type="submit" fullWidth sx={{ py: 1.2, fontWeight: 600 }}>
-								送信
-							</Button>
-						</form>
+								</Box>
+								<TextField
+									label="プロジェクトの説明(任意)"
+									value={projectDesc}
+									onChange={e => setProjectDesc(e.target.value)}
+									fullWidth
+									multiline
+									minRows={2}
+									sx={{ mb: 2 }}
+								/>
+								<Button
+									variant="contained"
+									color="primary"
+									type="submit"
+									fullWidth
+									sx={{ py: 1.2, fontWeight: 600 }}
+									disabled={
+										!projectName.trim() ||
+										!githubUser.trim() ||
+										!githubRepo.trim()
+									}
+								>
+									送信
+								</Button>
+							</form>
+						)}
 					</Paper>
 				</Box>
 			</Box>

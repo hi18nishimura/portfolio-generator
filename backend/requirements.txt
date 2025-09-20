@@ -5,3 +5,5 @@ python-dotenv
 bcrypt
 firebase-admin
 python-jose
+GitPython
+google-genai
