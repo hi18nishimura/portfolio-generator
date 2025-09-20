@@ -111,24 +111,30 @@ async def gemini_prompt_api(request: GeminiPromptRequest, token: str = Depends(o
     # 認証チェック
     if not get_current_user(token):
         raise HTTPException(status_code=401, detail="認証トークンが不正です")
-    
+    print(request)
     # GeminiAPI呼び出し
     try:
         file_contents, commit_history = fetch_github_repo(request.githubUser, request.githubRepo)
-        if request.selectedOptions:
-            if request.selectedOptions.get("issue"):
-                issue_info = fetch_github_issues(request.githubUser, request.githubRepo)
-            if request.selectedOptions.get("pull_request"):
-                pr_info = fetch_github_pull_requests(request.githubUser, request.githubRepo)
-            if request.selectedOptions.get("events"):
-                event_info = fetch_github_events(request.githubUser, request.githubRepo)
-            if request.selectedOptions.get("releases"):
-                release_info = fetch_github_releases(request.githubUser, request.githubRepo)
-        prompt = prompt_github_info(file_contents, commit_history, issue=issue_info if request.selectedOptions.get("issue") else None,
-                           pr=pr_info if request.selectedOptions.get("pull_request") else None,
-                           event=event_info if request.selectedOptions.get("events") else None,
-                           release=release_info if request.selectedOptions.get("releases") else None,
-                           additional_instructions=request.geminiPrompt if request.geminiPrompt else "")
+        # info変数を初期化
+        issue_info = pr_info = event_info = release_info = None
+        selected = request.selectedOptions or {}
+        if selected.get("issue"):
+            issue_info = fetch_github_issues(request.githubUser, request.githubRepo)
+        if selected.get("pull_request"):
+            pr_info = fetch_github_pull_requests(request.githubUser, request.githubRepo)
+        if selected.get("events"):
+            event_info = fetch_github_events(request.githubUser, request.githubRepo)
+        if selected.get("releases"):
+            release_info = fetch_github_releases(request.githubUser, request.githubRepo)
+        prompt = prompt_github_info(
+            file_contents,
+            commit_history,
+            issue=issue_info if selected.get("issue") else None,
+            pr=pr_info if selected.get("pull_request") else None,
+            event=event_info if selected.get("events") else None,
+            release=release_info if selected.get("releases") else None,
+            additional_instructions=request.geminiPrompt if request.geminiPrompt else ""
+        )
         return generate_gemini_response(prompt)
     except Exception as e:
         print(f"GitHubリポジトリ取得エラー: {e}")
