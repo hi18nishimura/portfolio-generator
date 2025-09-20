@@ -39,7 +39,14 @@ def save_project_firestore(user_id: str, prompt: str, output: str, prj_name: str
 	ユーザーIDに紐づけてプロンプトと出力結果をFirestoreに保存する関数
 	"""
 	try:
-		output_dict = json.loads(json.dumps(output, default=lambda o: o.__dict__))
+		# outputを明示的にdict化
+		if isinstance(output, dict):
+			output_dict = output
+		elif hasattr(output, "__dict__"):
+			output_dict = dict(output.__dict__)
+		else:
+			output_dict = {"value": output}
+
 		# Firestoreクライアントの取得
 		db = firebase_admin.firestore.client()
 		users_ref = db.collection("users")
@@ -87,7 +94,8 @@ def load_projects_firestore(user_id: str):
 				data = doc.to_dict()
 				data["id"] = doc.id  # ドキュメントIDを追加
 				# FirestoreのタイムスタンプをISOフォーマットに変換
-				if "createdAt" in data and isinstance(data["createdAt"], firestore.SERVER_TIMESTAMP.__class__):
+				from datetime import datetime
+				if "createdAt" in data and isinstance(data["createdAt"], datetime):
 					data["createdAt"] = data["createdAt"].isoformat()
 				results.append(data)
 			return results
