@@ -12,7 +12,7 @@ const Sidebar = ({
   setSidebarCollapsed,
   selectedProject,
   handleProjectSelect,
-  DUMMY_PROJECTS,
+  PROJECT_LIST,
   NEW_PROJECT,
   isMobile
 }) => {
@@ -68,7 +68,7 @@ const Sidebar = ({
               <ListItemText primary="新規作成" secondary="新しいプロジェクト" />
             </ListItemButton>
           </ListItem>
-          {DUMMY_PROJECTS.map((prj) => (
+          {PROJECT_LIST.map((prj) => (
             <ListItem key={prj.id} disablePadding>
               <ListItemButton selected={selectedProject.id === prj.id} onClick={() => handleProjectSelect(prj)}>
                 <ListItemText primary={prj.name} secondary={prj.description} />

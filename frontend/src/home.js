@@ -6,12 +6,6 @@ import ProjectForm from "./components/ProjectForm";
 import GeminiResult from "./components/GeminiResult";
 import MenuIcon from '@mui/icons-material/Menu';
 
-// ダミープロジェクト一覧
-const DUMMY_PROJECTS = [
-	{ id: 1, name: "Portfolio Generator", description: "ポートフォリオ自動生成ツール" },
-	{ id: 2, name: "Quiz App", description: "クイズ学習アプリ" },
-	{ id: 3, name: "Blog System", description: "ブログ投稿管理" }
-];
 const NEW_PROJECT = { id: 'new', name: '', description: '' };
 
 
@@ -30,11 +24,44 @@ const HomePage = () => {
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [sidebarHovered, setSidebarHovered] = useState(false);
 	const [drawerOpen, setDrawerOpen] = useState(false);
+	const [PROJECT_LIST, setProjectList] = useState([]);
 	const sidebarRef = useRef(null);
 
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
+	// プロジェクト一覧を取得
+	useEffect(() => {
+		const fetchProjects = async () => {
+			try {
+				const token = localStorage.getItem('access_token');
+				const apiUrl = process.env.REACT_APP_API_URL;
+				const apiVersion = process.env.REACT_APP_API_VERSION;
+				const url = `${apiUrl}/${apiVersion}/load_projects`;
+				const res = await fetch(url, {
+					method: 'GET',
+					headers: {
+						'Authorization': `Bearer ${token}`
+					}
+				});
+				if (res.ok) {
+					const data = await res.json();
+					// projects配列からprj_name, prj_descriptionを抽出
+					const projects = (data.projects || []).map((prj, idx) => ({
+						id: prj.prj_id || idx,
+						name: prj.prj_name || '',
+						description: prj.prj_description || '',
+						prompt: prj.prompt || '',
+						output: prj.output || null
+					}));
+					setProjectList(projects);
+				}
+			} catch (err) {
+				// エラー時は空配列のまま
+			}
+		};
+		fetchProjects();
+	}, []);
 
 	useEffect(() => {
 		const token = localStorage.getItem('access_token');
@@ -72,6 +99,7 @@ const HomePage = () => {
 		setSelectedProject(project);
 		if (project.id === 'new') {
 			setFormData({ projectName: "", githubUrl: "", description: "", additionalInfo: "" });
+			setApiResult(null);
 		} else {
 			setFormData({
 				projectName: project.name,
@@ -79,6 +107,13 @@ const HomePage = () => {
 				description: project.description,
 				additionalInfo: ""
 			});
+			// PROJECT_LISTから該当プロジェクトのpromptを取得し、apiResultにセット
+			const found = PROJECT_LIST.find(p => p.id === project.id);
+			if (found && found.output) {
+				setApiResult(found.output);
+			} else {
+				setApiResult(null);
+			}
 		}
 	};
 
@@ -88,56 +123,56 @@ const HomePage = () => {
 		setFormData((prev) => ({ ...prev, [name]: value }));
 	};
 
-			// バリデーション
-			const requiredFields = ["projectName"];
-			const isFormValid = React.useMemo(() => {
-			  return requiredFields.every((key) => formData[key]?.trim());
-			}, [formData, requiredFields]);
+	// バリデーション
+	const requiredFields = ["projectName"];
+	const isFormValid = React.useMemo(() => {
+		return requiredFields.every((key) => formData[key]?.trim());
+	}, [formData, requiredFields]);
 
-				// Geminiプロンプト送信
-				const handleSubmit = async (e, submitData) => {
-					e.preventDefault();
-					const raw = submitData || formData;
-								// Model.pyのGeminiPromptRequestに合わせてキー名・構造を修正
-								const payload = {
-								  projectName: raw.projectName || "",
-								  projectDes: raw.description || "",
-								  githubUser: raw.githubUser || "",
-								  githubRepo: raw.githubRepo || "",
-								  selectedOptions: raw.selectedOptions || {},
-								  geminiPrompt: raw.geminiPrompt || ""
-								};
-				const token = localStorage.getItem('access_token');
-				if (!token) {
-					alert('認証トークンがありません。再ログインしてください。');
-					navigate('/');
-					return;
-				}
-				setIsLoading(true);
-				try {
-					const apiUrl = process.env.REACT_APP_API_URL;
-					const apiVersion = process.env.REACT_APP_API_VERSION;
-					const url = `${apiUrl}/${apiVersion}/project_generate`;
-					const res = await fetch(url, {
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							'Authorization': `Bearer ${token}`
-						},
-						body: JSON.stringify(payload)
-					});
-					if (!res.ok) {
-						const err = await res.json();
-						throw new Error(err.detail || 'APIエラー');
-					}
-					const data = await res.json();
-					setApiResult(data);
-				} catch (err) {
-					alert("送信失敗: " + err.message);
-				} finally {
-					setIsLoading(false);
-				}
-			};
+	// Geminiプロンプト送信
+	const handleSubmit = async (e, submitData) => {
+		e.preventDefault();
+		const raw = submitData || formData;
+		// Model.pyのGeminiPromptRequestに合わせてキー名・構造を修正
+		const payload = {
+			projectName: raw.projectName || "",
+			projectDes: raw.description || "",
+			githubUser: raw.githubUser || "",
+			githubRepo: raw.githubRepo || "",
+			selectedOptions: raw.selectedOptions || {},
+			geminiPrompt: raw.geminiPrompt || ""
+		};
+		const token = localStorage.getItem('access_token');
+		if (!token) {
+			alert('認証トークンがありません。再ログインしてください。');
+			navigate('/');
+			return;
+		}
+		setIsLoading(true);
+		try {
+			const apiUrl = process.env.REACT_APP_API_URL;
+			const apiVersion = process.env.REACT_APP_API_VERSION;
+			const url = `${apiUrl}/${apiVersion}/project_generate`;
+			const res = await fetch(url, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}`
+				},
+				body: JSON.stringify(payload)
+			});
+			if (!res.ok) {
+				const err = await res.json();
+				throw new Error(err.detail || 'APIエラー');
+			}
+			const data = await res.json();
+			setApiResult(data);
+		} catch (err) {
+			alert("送信失敗: " + err.message);
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
 	// サイドバーのマウスイベント
 	const handleSidebarMouseEnter = () => setSidebarHovered(true);
@@ -178,7 +213,7 @@ const HomePage = () => {
 						setSidebarCollapsed={setSidebarCollapsed}
 						selectedProject={selectedProject}
 						handleProjectSelect={handleProjectSelect}
-						DUMMY_PROJECTS={DUMMY_PROJECTS}
+						PROJECT_LIST={PROJECT_LIST}
 						NEW_PROJECT={NEW_PROJECT}
 						isMobile={isMobile}
 					/>
@@ -209,12 +244,12 @@ const HomePage = () => {
 								sidebarRef={sidebarRef}
 								sidebarCollapsed={false}
 								sidebarHovered={false}
-								handleSidebarMouseEnter={() => {}}
-								handleSidebarMouseLeave={() => {}}
-								setSidebarCollapsed={() => {}}
+								handleSidebarMouseEnter={() => { }}
+								handleSidebarMouseLeave={() => { }}
+								setSidebarCollapsed={() => { }}
 								selectedProject={selectedProject}
 								handleProjectSelect={(prj) => { handleProjectSelect(prj); setDrawerOpen(false); }}
-								DUMMY_PROJECTS={DUMMY_PROJECTS}
+								PROJECT_LIST={PROJECT_LIST}
 								NEW_PROJECT={NEW_PROJECT}
 								isMobile={false}
 							/>
