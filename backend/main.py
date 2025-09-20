@@ -83,9 +83,6 @@ async def register_user(request: RegisterRequest):
         raise HTTPException(status_code=500, detail="サーバーエラーが発生しました")
     
 # 認証済みユーザーのみアクセス可能なテスト用エンドポイント
-from fastapi.security import OAuth2PasswordBearer
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"/{API_VERSION}/login")
-
 @app.get(f"/{API_VERSION}/protected")
 def protected_endpoint(token: str = Depends(oauth2_scheme)):
     if not token:
@@ -108,30 +105,6 @@ async def login_user(request: LoginRequest):
         print(f"ログインエラー: {e}")
         raise HTTPException(status_code=500, detail="サーバーエラーが発生しました")
 
-# @app.post(f"/{API_VERSION}/github_info")
-# async def github_info_api(request: GeminiPromptRequest):
-#     try:
-#         file_contents, commit_history = fetch_github_repo(request.githubUser, request.githubRepo)
-#         if request.selectedOptions:
-#             if request.selectedOptions.get("pull_request"):
-#                 issue_info = fetch_github_issues(request.githubUser, request.githubRepo)
-#             if request.selectedOptions.get("issue"):
-#                 pr_info = fetch_github_pull_requests(request.githubUser, request.githubRepo)
-#             if request.selectedOptions.get("events"):
-#                 event_info = fetch_github_events(request.githubUser, request.githubRepo)
-#             if request.selectedOptions.get("releases"):
-#                 release_info = fetch_github_releases(request.githubUser, request.githubRepo)
-#         prompt = prompt_github_info(file_contents, commit_history, issue=issue_info if request.selectedOptions.get("issue") else None,
-#                            pr=pr_info if request.selectedOptions.get("pull_request") else None,
-#                            event=event_info if request.selectedOptions.get("events") else None,
-#                            release=release_info if request.selectedOptions.get("releases") else None,
-#                            additional_instructions=request.geminiPrompt if request.geminiPrompt else "")
-#         return generate_gemini_response(prompt)
-
-#     except Exception as e:
-#         print(f"GitHub情報取得エラー: {e}")
-#         raise HTTPException(status_code=500, detail="GitHub情報の取得に失敗しました")
-
 # Geminiプロンプト送信API
 @app.post(f"/{API_VERSION}/project_generate")
 async def gemini_prompt_api(request: GeminiPromptRequest, token: str = Depends(oauth2_scheme)):
@@ -143,9 +116,9 @@ async def gemini_prompt_api(request: GeminiPromptRequest, token: str = Depends(o
     try:
         file_contents, commit_history = fetch_github_repo(request.githubUser, request.githubRepo)
         if request.selectedOptions:
-            if request.selectedOptions.get("pull_request"):
-                issue_info = fetch_github_issues(request.githubUser, request.githubRepo)
             if request.selectedOptions.get("issue"):
+                issue_info = fetch_github_issues(request.githubUser, request.githubRepo)
+            if request.selectedOptions.get("pull_request"):
                 pr_info = fetch_github_pull_requests(request.githubUser, request.githubRepo)
             if request.selectedOptions.get("events"):
                 event_info = fetch_github_events(request.githubUser, request.githubRepo)
@@ -160,3 +133,4 @@ async def gemini_prompt_api(request: GeminiPromptRequest, token: str = Depends(o
     except Exception as e:
         print(f"GitHubリポジトリ取得エラー: {e}")
         raise HTTPException(status_code=500, detail="GitHubリポジトリの情報取得に失敗しました")
+    
