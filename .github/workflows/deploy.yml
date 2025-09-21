@@ -1,4 +1,4 @@
-      - name: Create .env file for backend
+- name: Create .env file for backend
         run: |
           echo "GOOGLE_APPLICATION_CREDENTIALS=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" >> ./backend/.env
           echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> ./backend/.env
@@ -13,7 +13,7 @@
 name: Build and Deploy to Cloud Run
 
 on:
-  push:
+  - push
 
 
 
