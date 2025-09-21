@@ -1,4 +1,4 @@
-name: Build and Deploy to Cloud Run
+name: Build and Deploy
 
 on: push
 
@@ -10,53 +10,35 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v3
 
+      # Google Cloud SDKのセットアップ
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ vars.PROJECT_ID }}
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
           export_default_credentials: true
 
-      - name: Create .env file for backend
-        run: |
-          echo "GOOGLE_APPLICATION_CREDENTIALS=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" >> ./backend/.env
-          echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> ./backend/.env
-          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> ./backend/.env
-          echo "FIRESTORE_PROJECT_ID=${{ vars.FIRESTORE_PROJECT_ID }}" >> ./backend/.env
-          echo "FRONTEND_URL=${{ vars.FRONTEND_URL }}" >> ./backend/.env
-          echo "API_VERSION=${{ vars.API_VERSION }}" >> ./backend/.env
-
-      - name: Create .env file for frontend
-        run: |
-          echo "REACT_APP_API_URL=${{ vars.REACT_APP_API_URL }}" >> ./frontend/.env
-          echo "REACT_APP_API_VERSION=${{ vars.REACT_APP_API_VERSION }}" >> ./frontend/.env
-
+      # Artifact Registry用Docker認証
       - name: Configure Docker for Artifact Registry
-        run: |
-          gcloud auth configure-docker ${{ vars.REGION }}-docker.pkg.dev
+        run: gcloud auth configure-docker ${{ vars.REGION }}-docker.pkg.dev --project=${{ vars.PROJECT_ID }}
 
-      - name: Build and push frontend image
-        run: |
-          docker build -t ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.FRONTEND_IMAGE }}:latest ./frontend
-          docker push ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.FRONTEND_IMAGE }}:latest
-
+      # バックエンドイメージのビルド＆プッシュ
       - name: Build and push backend image
         run: |
           docker build -t ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.BACKEND_IMAGE }}:latest ./backend
           docker push ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.BACKEND_IMAGE }}:latest
-
-      - name: Deploy to Cloud Run (frontend)
+      # バックエンドサービスのデプロイとURL取得
+      - name: Deploy backend service to Cloud Run
+        id: deploy-backend
         run: |
-          gcloud run deploy frontend-service \
-            --image=${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.FRONTEND_IMAGE }}:latest \
-            --region=${{ vars.REGION }} \
-            --platform=managed \
-            --allow-unauthenticated
-
-      - name: Deploy to Cloud Run (backend)
-        run: |
-          gcloud run deploy backend-service \
+          gcloud run deploy ${{ vars.BACKEND_IMAGE }} \
             --image=${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.BACKEND_IMAGE }}:latest \
             --region=${{ vars.REGION }} \
             --platform=managed \
-            --allow-unauthenticated
+            --allow-unauthenticated \
+            --set-env-vars GOOGLE_APPLICATION_CREDENTIALS=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }},JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }},GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},FIRESTORE_PROJECT_ID=${{ vars.FIRESTORE_PROJECT_ID }},FRONTEND_URL=${{ vars.FRONTEND_URL }} \
+            --quiet
+          
+          # Get backend service URL
+          BACKEND_URL=$(gcloud run services describe ${{ vars.BACKEND_IMAGE }} --region=${{ vars.REGION }} --format='value(status.url)')
+          echo "BACKEND_URL=$BACKEND_URL" >> $GITHUB_ENV
