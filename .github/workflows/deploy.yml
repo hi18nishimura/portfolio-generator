@@ -1,0 +1,63 @@
+      - name: Create .env file for backend
+        run: |
+          echo "GOOGLE_APPLICATION_CREDENTIALS=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" >> ./backend/.env
+          echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> ./backend/.env
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> ./backend/.env
+          echo "FIRESTORE_PROJECT_ID=${{ vars.FIRESTORE_PROJECT_ID }}" >> ./backend/.env
+          echo "FRONTEND_URL=${{ vars.FRONTEND_URL }}" >> ./backend/.env
+          echo "API_VERSION=${{ vars.API_VERSION }}" >> ./backend/.env
+      - name: Create .env file for frontend
+        run: |
+          echo "REACT_APP_API_URL=${{ vars.REACT_APP_API_URL }}" >> ./frontend/.env
+          echo "REACT_APP_API_VERSION=${{ vars.REACT_APP_API_VERSION }}" >> ./frontend/.env
+name: Build and Deploy to Cloud Run
+
+on:
+  push:
+
+
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ vars.PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          export_default_credentials: true
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ vars.REGION }}-docker.pkg.dev
+
+      - name: Build and push frontend image
+        run: |
+          docker build -t ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.FRONTEND_IMAGE }}:latest ./frontend
+          docker push ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.FRONTEND_IMAGE }}:latest
+
+      - name: Build and push backend image
+        run: |
+          docker build -t ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.BACKEND_IMAGE }}:latest ./backend
+          docker push ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.BACKEND_IMAGE }}:latest
+
+      - name: Deploy to Cloud Run (frontend)
+        run: |
+          gcloud run deploy frontend-service \
+            --image=${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.FRONTEND_IMAGE }}:latest \
+            --region=${{ vars.REGION }} \
+            --platform=managed \
+            --allow-unauthenticated
+
+      - name: Deploy to Cloud Run (backend)
+        run: |
+          gcloud run deploy backend-service \
+            --image=${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.BACKEND_IMAGE }}:latest \
+            --region=${{ vars.REGION }} \
+            --platform=managed \
+            --allow-unauthenticated
