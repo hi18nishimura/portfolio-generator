@@ -10,13 +10,15 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v3
 
-      # Google Cloud SDKのセットアップ
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ vars.PROJECT_ID }}
-          service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
-          export_default_credentials: true
 
       # Artifact Registry用Docker認証
       - name: Configure Docker for Artifact Registry
