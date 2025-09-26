@@ -5,12 +5,16 @@ class Settings:
     # Firebaseのサービスアカウントキーのパス
     GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
     # FirestoreのプロジェクトID
-    FIRESTORE_PROJECT_ID = os.getenv("FIRESTORE_PROJECT_ID")
+    PROJECT_ID = os.getenv("PROJECT_ID")
     # JWTのシークレットキー
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
     # フロントエンドのURL
     FRONTEND_URL = os.getenv("FRONTEND_URL")
     # APIのバージョン
     API_VERSION = os.getenv("API_VERSION")
-    
+    # デプロイされているかどうかのフラグ（デフォルトは: DEBUG）
+    IS_DEPLOYED = os.getenv("IS_DEPLOYED", "DEBUG")
+    # if IS_DEPLOYED == "DEPLOY":
+    #     # クレデンシャルを一時ファイルに保存する
+    #     GOOGLE_APPLICATION_CREDENTIALS = "/tmp/GOOGLE_APPLICATION_CREDENTIALS.json"
 settings = Settings()

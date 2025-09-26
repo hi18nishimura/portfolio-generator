@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request, HTTPException, Depends
 import os
+import json
 from dotenv import load_dotenv
 import bcrypt
 from module.model import RegisterRequest, LoginRequest, GeminiPromptRequest
@@ -16,12 +17,14 @@ from datetime import datetime, timedelta, timezone
 # 環境変数の読み込み
 API_VERSION = settings.API_VERSION
 FRONTEND_URL = settings.FRONTEND_URL
-FIRESTORE_PROJECT_ID = settings.FIRESTORE_PROJECT_ID
+PROJECT_ID = settings.PROJECT_ID
 GOOGLE_APPLICATION_CREDENTIALS = settings.GOOGLE_APPLICATION_CREDENTIALS
+IS_DEPLOYED = settings.IS_DEPLOYED
 # JWT設定
 SECRET_KEY = settings.JWT_SECRET_KEY
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
+
 # API初期化
 load_dotenv()
 app = FastAPI()
@@ -50,7 +53,10 @@ def create_access_token(user_id: str, expires_delta: timedelta = None):
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 # Firestoreクライアント初期化
-cred = credentials.Certificate(GOOGLE_APPLICATION_CREDENTIALS)
+if IS_DEPLOYED == "DEBUG":
+    cred = credentials.Certificate(GOOGLE_APPLICATION_CREDENTIALS)
+elif IS_DEPLOYED == "DEPLOY":
+    cred = credentials.Certificate(json.loads(GOOGLE_APPLICATION_CREDENTIALS))
 firebase_admin.initialize_app(cred)
 
 app.add_middleware(
