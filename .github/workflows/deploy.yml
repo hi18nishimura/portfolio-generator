@@ -17,12 +17,10 @@ jobs:
 
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ vars.PROJECT_ID }}
 
       # Artifact Registry用Docker認証
       - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker docker.pkg.dev --project=${{ vars.PROJECT_ID }}
+        run: gcloud auth configure-docker ${{ vars.REGION }}-docker.pkg.dev --project=${{ vars.PROJECT_ID }}
 
       # バックエンドイメージのビルド＆プッシュ
       - name: Build and push backend image
