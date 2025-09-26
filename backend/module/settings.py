@@ -12,5 +12,8 @@ class Settings:
     FRONTEND_URL = os.getenv("FRONTEND_URL")
     # APIのバージョン
     API_VERSION = os.getenv("API_VERSION")
-    
+    # デプロイされているかどうかのフラグ（デフォルトは: DEBUG）
+    IS_DEPLOYED = os.getenv("IS_DEPLOYED", "DEBUG")
+    if IS_DEPLOYED == "DEPLOY":
+        GOOGLE_APPLICATION_CREDENTIALS = "/tmp/GOOGLE_APPLICATION_CREDENTIALS.json"
 settings = Settings()

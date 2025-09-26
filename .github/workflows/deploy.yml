@@ -27,6 +27,11 @@ jobs:
         run: |
           docker build -t ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.BACKEND_IMAGE }}:latest ./backend
           docker push ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.BACKEND_IMAGE }}:latest
+    
+     #
+      - name: Create service account key file
+        run: echo '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}' > /tmp/GOOGLE_APPLICATION_CREDENTIALS.json
+     
       # バックエンドサービスのデプロイとURL取得
       - name: Deploy backend service to Cloud Run
         id: deploy-backend
