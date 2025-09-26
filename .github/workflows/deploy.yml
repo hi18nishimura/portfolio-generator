@@ -33,7 +33,7 @@ jobs:
         run: |
           gcloud run deploy ${{ vars.BACKEND_IMAGE }} \
             --image=${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.BACKEND_IMAGE }}:latest \
-            --port=8000
+            --port=8000 \
             --region=${{ vars.REGION }} \
             --platform=managed \
             --allow-unauthenticated \
