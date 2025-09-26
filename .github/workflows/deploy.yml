@@ -31,7 +31,7 @@ jobs:
      #
       - name: Create service account key file
         run: echo '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}' > /tmp/GOOGLE_APPLICATION_CREDENTIALS.json
-     
+
       # バックエンドサービスのデプロイとURL取得
       - name: Deploy backend service to Cloud Run
         id: deploy-backend

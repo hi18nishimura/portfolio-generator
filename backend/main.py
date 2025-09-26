@@ -50,6 +50,7 @@ def create_access_token(user_id: str, expires_delta: timedelta = None):
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 # Firestoreクライアント初期化
+print(f"GOOGLE_APPLICATION_CREDENTIALS: {GOOGLE_APPLICATION_CREDENTIALS}")
 cred = credentials.Certificate(GOOGLE_APPLICATION_CREDENTIALS)
 firebase_admin.initialize_app(cred)
 
