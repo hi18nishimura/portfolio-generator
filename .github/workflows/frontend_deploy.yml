@@ -1,10 +1,11 @@
 
 name: Build and Deploy Frontend
 
-on:
-  push:
-    branches:
-      - develop
+# on:
+#   push:
+#     branches:
+#       - develop
+on: push
 
 jobs:
   frontend-build-and-deploy:
@@ -37,8 +38,8 @@ jobs:
         run: |
           cat <<EOF > /tmp/frontend_env.yml
           PROJECT_ID: ${{ vars.PROJECT_ID }}
-          BACKEND_URL: ${{ vars.BACKEND_URL }}
-          API_VERSION: ${{ vars.API_VERSION }}
+          REACT_APP_API_URL: ${{ vars.BACKEND_URL }}
+          REACT_APP_API_VERSION: ${{ vars.API_VERSION }}
           EOF
       
       # フロントエンドサービスのデプロイとURL取得
