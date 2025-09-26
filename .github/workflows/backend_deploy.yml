@@ -3,7 +3,7 @@ name: Build and Deploy
 on: push
 
 jobs:
-  build-and-deploy:
+  backend-build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,10 +27,6 @@ jobs:
         run: |
           docker build -t ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.BACKEND_IMAGE }}:latest ./backend
           docker push ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.BACKEND_IMAGE }}:latest
-    
-     #
-      - name: Create service account key file
-        run: echo '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}' > /tmp/GOOGLE_APPLICATION_CREDENTIALS.json
 
     # 環境変数ファイルの作成
       - name: Create env vars file

@@ -14,6 +14,7 @@ class Settings:
     API_VERSION = os.getenv("API_VERSION")
     # デプロイされているかどうかのフラグ（デフォルトは: DEBUG）
     IS_DEPLOYED = os.getenv("IS_DEPLOYED", "DEBUG")
-    if IS_DEPLOYED == "DEPLOY":
-        GOOGLE_APPLICATION_CREDENTIALS = "/tmp/GOOGLE_APPLICATION_CREDENTIALS.json"
+    # if IS_DEPLOYED == "DEPLOY":
+    #     # クレデンシャルを一時ファイルに保存する
+    #     GOOGLE_APPLICATION_CREDENTIALS = "/tmp/GOOGLE_APPLICATION_CREDENTIALS.json"
 settings = Settings()
