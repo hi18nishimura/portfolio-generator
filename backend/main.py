@@ -16,7 +16,7 @@ from datetime import datetime, timedelta, timezone
 # 環境変数の読み込み
 API_VERSION = settings.API_VERSION
 FRONTEND_URL = settings.FRONTEND_URL
-FIRESTORE_PROJECT_ID = settings.FIRESTORE_PROJECT_ID
+PROJECT_ID = settings.PROJECT_ID
 GOOGLE_APPLICATION_CREDENTIALS = settings.GOOGLE_APPLICATION_CREDENTIALS
 # JWT設定
 SECRET_KEY = settings.JWT_SECRET_KEY

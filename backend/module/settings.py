@@ -5,7 +5,7 @@ class Settings:
     # Firebaseのサービスアカウントキーのパス
     GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
     # FirestoreのプロジェクトID
-    FIRESTORE_PROJECT_ID = os.getenv("FIRESTORE_PROJECT_ID")
+    PROJECT_ID = os.getenv("PROJECT_ID")
     # JWTのシークレットキー
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
     # フロントエンドのURL

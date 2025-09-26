@@ -4,7 +4,7 @@
 - Google CloudでサービスアカウントJSONを発行し、`backend`ディレクトリに配置
 - `backend/.env` を編集（例）
 	- GOOGLE_APPLICATION_CREDENTIALS=./db_account.json
-	- FIRESTORE_PROJECT_ID=your-gcp-project-id
+	- PROJECT_ID=your-gcp-project-id
 
 ## 2. 初回セットアップ
 ```bash
