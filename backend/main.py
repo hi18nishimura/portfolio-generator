@@ -56,7 +56,10 @@ def create_access_token(user_id: str, expires_delta: timedelta = None):
 if IS_DEPLOYED == "DEBUG":
     cred = credentials.Certificate(GOOGLE_APPLICATION_CREDENTIALS)
 elif IS_DEPLOYED == "DEPLOY":
-    cred = credentials.Certificate(json.loads(GOOGLE_APPLICATION_CREDENTIALS))
+    try:
+        cred = credentials.Certificate(json.loads(GOOGLE_APPLICATION_CREDENTIALS))
+    except json.JSONDecodeError as e:
+        raise Exception(f"Failed to parse GOOGLE_APPLICATION_CREDENTIALS as JSON: {e}")
 firebase_admin.initialize_app(cred)
 
 app.add_middleware(

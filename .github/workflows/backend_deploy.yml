@@ -4,7 +4,7 @@ name: Build and Deploy Backend
 on:
   push:
     branches:
-      - deploy
+      - develop
 
 jobs:
   backend-build-and-deploy:
@@ -32,7 +32,7 @@ jobs:
           docker build -t ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.BACKEND_IMAGE }}:latest ./backend
           docker push ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.BACKEND_IMAGE }}:latest
 
-    # 環境変数ファイルの作成
+      # 環境変数ファイルの作成
       - name: Create env vars file
         run: |
           cat <<EOF > /tmp/backend_env.yml
