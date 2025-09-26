@@ -42,7 +42,7 @@ jobs:
             --region=${{ vars.REGION }} \
             --platform=managed \
             --allow-unauthenticated \
-            --set-env-vars GOOGLE_APPLICATION_CREDENTIALS=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }},JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }},GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},PROJECT_ID=${{ vars.PROJECT_ID }},FRONTEND_URL=${{ vars.FRONTEND_URL }} \
+            --set-env-vars 'GOOGLE_APPLICATION_CREDENTIALS=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }},JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }},GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},PROJECT_ID=${{ vars.PROJECT_ID }},FRONTEND_URL=${{ vars.FRONTEND_URL }}' \
             --quiet
           
           # Get backend service URL
