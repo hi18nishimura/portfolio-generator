@@ -1,6 +1,10 @@
+
 name: Build and Deploy Frontend
 
-on: push
+on:
+  push:
+    branches:
+      - deploy
 
 jobs:
   frontend-build-and-deploy:
@@ -43,7 +47,7 @@ jobs:
         run: |
           gcloud run deploy ${{ vars.FRONTEND_IMAGE }} \
             --image=${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.FRONTEND_IMAGE }}:latest \
-            --port=8080 \
+            --port=3000 \
             --region=${{ vars.REGION }} \
             --platform=managed \
             --allow-unauthenticated \
