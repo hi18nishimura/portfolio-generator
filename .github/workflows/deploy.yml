@@ -36,11 +36,11 @@ jobs:
       - name: Create env vars file
         run: |
           cat <<EOF > /tmp/backend_env.yml
-          GOOGLE_APPLICATION_CREDENTIALS: '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}''
+          GOOGLE_APPLICATION_CREDENTIALS: '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}'
           JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           PROJECT_ID: ${{ vars.PROJECT_ID }}
-          FRONTEND_URL: ${{ vars.FRONTEND_URL }}1
+          FRONTEND_URL: ${{ vars.FRONTEND_URL }}
           API_VERSION: ${{ vars.API_VERSION }}
           IS_DEPLOYED: ${{ vars.IS_DEPLOYED }}
           EOF
