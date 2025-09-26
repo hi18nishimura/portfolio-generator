@@ -1,0 +1,51 @@
+name: Build and Deploy Frontend
+
+on: push
+
+jobs:
+	frontend-build-and-deploy:
+		runs-on: ubuntu-latest
+
+		steps:
+			- name: Checkout source
+				uses: actions/checkout@v3
+
+			- name: Authenticate to Google Cloud
+				uses: google-github-actions/auth@v2
+				with:
+					credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+
+			- name: Set up Google Cloud SDK
+				uses: google-github-actions/setup-gcloud@v2
+
+			# Artifact Registry用Docker認証
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ vars.REGION }}-docker.pkg.dev --project=${{ vars.PROJECT_ID }}
+
+			# フロントエンドイメージのビルド＆プッシュ
+			- name: Build and push frontend image
+				run: |
+					docker build -t ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.FRONTEND_IMAGE }}:latest ./frontend
+					docker push ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.FRONTEND_IMAGE }}:latest
+
+			# 環境変数ファイルの作成（必要に応じて編集）
+			- name: Create env vars file
+				run: |
+					cat <<EOF > /tmp/frontend_env.yml
+					PROJECT_ID: ${{ vars.PROJECT_ID }}
+					BACKEND_URL: ${{ vars.BACKEND_URL }}
+					API_VERSION: ${{ vars.API_VERSION }}
+					EOF
+
+			# フロントエンドサービスのデプロイとURL取得
+			- name: Deploy frontend service to Cloud Run
+				id: deploy-frontend
+				run: |
+					gcloud run deploy ${{ vars.FRONTEND_IMAGE }} \
+						--image=${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${{ vars.REPO_NAME }}/${{ vars.FRONTEND_IMAGE }}:latest \
+						--port=8080 \
+						--region=${{ vars.REGION }} \
+						--platform=managed \
+						--allow-unauthenticated \
+						--env-vars-file /tmp/frontend_env.yml \
+						--quiet
